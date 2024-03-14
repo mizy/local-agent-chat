@@ -1,0 +1,55 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "flutter_application_1",
+      "request": "launch",
+      "type": "dart"
+    },
+    {
+      "name": "flutter_application_1 (profile mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile"
+    },
+    {
+      "name": "flutter_application_1 (release mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release"
+    },
+    {
+      "name": "llama_cpp_dart",
+      "cwd": "llama_cpp_dart",
+      "request": "launch",
+      "type": "dart"
+    },
+    {
+      "name": "llama_cpp_dart (profile mode)",
+      "cwd": "llama_cpp_dart",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile"
+    },
+    {
+      "name": "llama_cpp_dart (release mode)",
+      "cwd": "llama_cpp_dart",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release"
+    },
+    {
+      "name": "C/C++: clang 生成和调试活动文件",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${fileDirname}/${fileBasenameNoExtension}",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "C/C++: clang 生成活动文件"
+    }
+  ]
+}
