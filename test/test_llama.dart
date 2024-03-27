@@ -10,10 +10,12 @@ Future<void> main() async {
         "/Users/mizy/projects/llama-cpp-gpt-api/models/lmstudio-ai/gemma-2b-it-GGUF/gemma-2b-it-q8_0.gguf",
     "ctx-size": "512",
   };
-  final instance = LlamaCPP(params);
+  final instance = LlamaCPP();
+  await instance.init(params);
   instance.setTemplate("gemma");
   final messages = [
-    ChatMessage("hello", "user")
+    ChatMessage("hi,how can i help you?", "asistant"),
+    ChatMessage("hello", "user"),
   ]; // Change this to the messages you want to send to the model
   final chats = instance.chat(messages);
 
@@ -21,5 +23,6 @@ Future<void> main() async {
     stdout.write(token);
   }
   stdout.write("\n");
-  instance.dispose();
+  await instance.dispose();
+  exit(0);
 }

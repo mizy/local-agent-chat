@@ -1,6 +1,5 @@
 #include "./llm.h"
 #include "./llama.cpp/common/common.h"
-
 #include <cassert>
 #include <cinttypes>
 #include <cmath>
@@ -90,6 +89,11 @@ int llm_completion(const char *prompt, dart_output *output)
     return 1;
   }
 
+  for (int32_t i = 1; i < params.n_parallel; ++i)
+  {
+    llama_kv_cache_seq_cp(ctx, 0, i, -1, -1);
+  }
+
   int n_cur = batch.n_tokens;
 
   while (!stop_generation)
@@ -100,7 +104,7 @@ int llm_completion(const char *prompt, dart_output *output)
       output("", true);
       return 0;
     }
-    const llama_token new_token_id = llama_sampling_sample(ctx_sampling, ctx, ctx_guidance);
+    const llama_token new_token_id = llama_sampling_sample(ctx_sampling, ctx, ctx_guidance, batch.n_tokens - 1);
     llama_sampling_accept(ctx_sampling, ctx, new_token_id, true);
     // is it an end of stream?
     if (new_token_id == llama_token_eos(model))
@@ -127,16 +131,17 @@ int llm_completion(const char *prompt, dart_output *output)
 
   return 0;
 }
-
 inline std::string format_chat(struct llama_chat_message *chat[], size_t length)
 {
   size_t alloc_size = 0;
+  std::vector<llama_chat_message> chatList(length);
   for (size_t i = 0; i < length; i++)
   {
+    chatList[i] = *chat[i];
     alloc_size += strlen(chat[i]->content);
   }
   std::vector<char> buf(alloc_size * 2);
-  int32_t res = llama_chat_apply_template(model, chat_template, chat[0], length, add_bos_token, buf.data(), buf.size());
+  int32_t res = llama_chat_apply_template(model, chat_template, chatList.data(), chatList.size(), add_bos_token, buf.data(), buf.size());
   if (res < 0)
   {
     std::string input_prefix = params.input_prefix;
@@ -146,7 +151,7 @@ inline std::string format_chat(struct llama_chat_message *chat[], size_t length)
   if ((size_t)res > buf.size())
   {
     buf.resize(res);
-    res = llama_chat_apply_template(model, chat_template, chat[0], length, true, buf.data(), buf.size());
+    res = llama_chat_apply_template(model, chat_template, chatList.data(), chatList.size(), true, buf.data(), buf.size());
   }
   std::string formatted_chat(buf.data(), res);
   return formatted_chat;

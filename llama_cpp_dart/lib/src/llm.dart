@@ -16,8 +16,12 @@ class ChatMessage {
 
 class LlamaCPP {
   static llama_cpp_binding? _lib;
-  static SendPort? sendPort;
+  static SendPort? sendPort; //stream output sendPort
+  int argc = 0;
+  Isolate? llmIsolate;
+  late SendPort isolateSendPort;
 
+  Pointer<Pointer<Char>>? argv;
   static void Function(String)? _log = (str) {
     stdout.write(str);
   };
@@ -38,10 +42,32 @@ class LlamaCPP {
     return _lib!;
   }
 
-  LlamaCPP(Map<String, String> params, {void Function(String)? log}) {
+  LlamaCPP({void Function(String)? log}) {
     if (log != null) _log = log;
-    final int argc = params.length * 2 + 1;
-    final Pointer<Pointer<Char>> argv = calloc<Pointer<Char>>(argc);
+  }
+
+  Future<bool> init(Map<String, String> params) async {
+    final receivePort = ReceivePort();
+    final completer = Completer<bool>();
+    llmIsolate =
+        await Isolate.spawn(initIsolate, [params, receivePort.sendPort]);
+    receivePort.listen((message) {
+      if (message is SendPort) {
+        isolateSendPort = message;
+        completer.complete(true);
+      }
+      if (message == null) {
+        receivePort.close();
+        completer.complete(false);
+      }
+      if (message is String) {}
+    });
+    return completer.future;
+  }
+
+  static (int, Pointer<Pointer<Char>>) makeArgv(Map<String, String> params) {
+    final argc = params.length * 2 + 1;
+    final argv = calloc<Pointer<Char>>(argc);
     argv[0] = 'llm'.toNativeUtf8().cast<Char>();
     for (var i = 0; i < params.length; i++) {
       final key = params.keys.elementAt(i);
@@ -49,7 +75,40 @@ class LlamaCPP {
       argv[2 * i + 1] = ("--$key").toNativeUtf8().cast<Char>();
       argv[2 * i + 1 + 1] = value.toNativeUtf8().cast<Char>();
     }
-    lib.llm_init(argc, argv, Pointer.fromFunction(_logOutput));
+    return (argc, argv);
+  }
+
+  void initIsolate(List<dynamic> args) {
+    final params = args[0] as Map<String, String>;
+    final mainSendPort = args[1] as SendPort;
+    final isolateReceivePort = ReceivePort();
+    final (argc, argv) = makeArgv(params);
+    final res = lib.llm_init(argc, argv, Pointer.fromFunction(_logOutput));
+    if (res != 0) {
+      lib.llm_cleanup();
+      return mainSendPort.send(null);
+    }
+    mainSendPort.send(isolateReceivePort.sendPort);
+    isolateReceivePort.listen((message) {
+      final type = message[0] as String;
+      final data = message[1];
+      if (type == "chat") {
+        final (List<ChatMessage> messages, SendPort sendPort) = data;
+        _chatIsolate([messages, sendPort]);
+      } else if (type == "completion") {
+        final (String input, SendPort sendPort) = data;
+        _completionIsolate([input, sendPort]);
+      } else if (type == "dispose") {
+        final sendPort = data as SendPort;
+        lib.llm_cleanup();
+        for (var i = 0; i < argc; i++) {
+          calloc.free(argv[i]);
+        }
+        calloc.free(argv);
+        sendPort.send(null);
+        isolateReceivePort.close();
+      }
+    });
   }
 
   static void output(Pointer<Char> buffer, bool stop) {
@@ -62,21 +121,18 @@ class LlamaCPP {
 
   Stream<String> chat(List<ChatMessage> messages) async* {
     final receivePort = ReceivePort();
-    final sendPort = receivePort.sendPort;
-    final isolate = await Isolate.spawn(_chatIsolate, [messages, sendPort]);
+    isolateSendPort.send(["chat", (messages, receivePort.sendPort)]);
     try {
       await for (var data in receivePort) {
         final (String message, bool done) = data;
         if (done) {
           receivePort.close();
-          isolate.kill();
           return;
         }
         yield message;
       }
     } catch (e) {
       receivePort.close();
-      isolate.kill();
       _log!('Error receiving message from isolate: $e');
     }
   }
@@ -85,7 +141,21 @@ class LlamaCPP {
     final messages = args[0] as List<ChatMessage>;
     sendPort = args[1] as SendPort;
     final chatMessage = _toNativeChatMessages(messages);
-    lib.llm_chat(chatMessage, messages.length, Pointer.fromFunction(output));
+    try {
+      lib.llm_chat(chatMessage, messages.length, Pointer.fromFunction(output));
+    } finally {
+      _freeChatMessage(chatMessage, messages.length);
+    }
+  }
+
+  static _freeChatMessage(
+      Pointer<Pointer<llama_chat_message>> chatMessage, int length) {
+    for (var i = 0; i < length; i++) {
+      calloc.free(chatMessage[i].ref.role);
+      calloc.free(chatMessage[i].ref.content);
+      calloc.free(chatMessage[i]);
+    }
+    calloc.free(chatMessage);
   }
 
   static Pointer<Pointer<llama_chat_message>> _toNativeChatMessages(
@@ -93,30 +163,32 @@ class LlamaCPP {
     final chatMessages = calloc<Pointer<llama_chat_message>>(messages.length);
 
     for (var i = 0; i < messages.length; i++) {
-      chatMessages[i] = calloc<llama_chat_message>()
-        ..ref.role = messages[i].role.toNativeUtf8().cast<Char>()
-        ..ref.content = messages[i].content.toNativeUtf8().cast<Char>();
+      chatMessages[i] = calloc<llama_chat_message>();
+      chatMessages[i].ref.role = messages[i].role.toNativeUtf8().cast<Char>();
+      chatMessages[i].ref.content =
+          messages[i].content.toNativeUtf8().cast<Char>();
     }
+
     return chatMessages;
   }
 
   Stream<String> completion({required String input}) async* {
     final receivePort = ReceivePort();
-    final isolate =
-        await Isolate.spawn(_completionIsolate, [input, receivePort.sendPort]);
+    isolateSendPort.send([
+      "completion",
+      [input, receivePort.sendPort]
+    ]);
     try {
       await for (var data in receivePort) {
         final (String message, bool done) = data;
         if (done) {
           receivePort.close();
-          isolate.kill();
           return;
         }
         yield message;
       }
     } catch (e) {
       receivePort.close();
-      isolate.kill();
       _log!('Error receiving message from isolate: $e');
     }
   }
@@ -146,7 +218,17 @@ class LlamaCPP {
     lib.llm_stop();
   }
 
-  void dispose() {
-    lib.llm_cleanup();
+  Future<void> dispose() async {
+    final receivePort = ReceivePort();
+    final completer = Completer<void>();
+    isolateSendPort.send(["dispose", receivePort.sendPort]);
+    receivePort.listen((message) {
+      if (message == null) {
+        receivePort.close();
+        llmIsolate!.kill();
+        completer.complete();
+      }
+    });
+    return completer.future;
   }
 }

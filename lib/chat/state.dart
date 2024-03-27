@@ -1,32 +1,35 @@
 import 'dart:io';
 
 import 'package:chat_gguf/ai.dart';
-import 'package:chat_gguf/chat_list/chat_session.dart';
-import 'package:chat_gguf/settings.dart';
+import 'package:chat_gguf/chat/page.dart';
+import 'package:chat_gguf/database/tables.dart';
+import 'package:chat_gguf/main.dart';
+import 'package:chat_gguf/utils.dart';
+import 'package:drift/drift.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
-import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:flutter_chat_ui/flutter_chat_ui.dart' as chat_ui;
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:llama_cpp_dart/llama_cpp_dart.dart';
 import 'package:mime/mime.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import 'package:chat_gguf/chat/page.dart';
+
+import '../database/database.dart' as table;
 
 class ChatPageState extends State<ChatPage> {
-  late ChatSession chatSession;
+  table.Chat? chatSession;
   List<types.Message> _messages = [];
+  late int chatId;
   final _user = const types.User(
-    id: '82091008-a484-4a89-ae75-a22bf8d6f3ac',
+    id: 'user',
   );
   final _bot = const types.User(
-    id: 'f590b8e0-5d5b-4e4b-8b2d-1b3b6e6d3d0d',
+    id: 'bot',
   );
-  AI ai = AI();
   @override
   void initState() {
     super.initState();
@@ -35,20 +38,45 @@ class ChatPageState extends State<ChatPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    chatSession = ModalRoute.of(context)!.settings.arguments as ChatSession;
-    initModelParams();
-    _loadMessages();
+    initChat();
   }
 
-  void initModelParams() async {
-    final settings = context.read<Settings>();
-    final err = ai.useSettings(settings);
-    if (err != "") {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(err),
-        ),
+  Future<table.Chat> getChatSession() async {
+    final chat = await global.database.getChatById(chatId);
+    setState(() {
+      chatSession = chat;
+    });
+    return chat;
+  }
+
+  void initChat() async {
+    final database = global.database;
+    chatId = ModalRoute.of(context)!.settings.arguments as int;
+    await database.getChatById(chatId);
+    loadMessage();
+  }
+
+  void loadMessage() async {
+    List<types.Message> messagesList = [];
+    final messages = await global.database.getMessagesByChatId(chatId);
+    if (messages.isEmpty) {
+      var message = types.TextMessage(
+        author: _bot,
+        id: '0',
+        text: "hi, how can I help you?",
       );
+      messagesList.add(message);
+      setState(() {
+        _messages = messagesList;
+      });
+    } else {
+      for (var message in messages) {
+        messagesList.add(types.TextMessage(
+            author: message.author == "user" ? _user : _bot,
+            id: message.id.toString(),
+            text: message.message,
+            createdAt: message.createdAt.microsecondsSinceEpoch));
+      }
     }
   }
 
@@ -68,10 +96,9 @@ class ChatPageState extends State<ChatPage> {
     showModalBottomSheet<void>(
       context: context,
       builder: (BuildContext context) => SafeArea(
-        child: SizedBox(
-          height: 144,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 10.0),
+          child: ListView(
             children: <Widget>[
               TextButton(
                 onPressed: () {
@@ -198,6 +225,26 @@ class ChatPageState extends State<ChatPage> {
     }
   }
 
+  SizedBox _buildAvatar(types.User? user) {
+    const double maxRadius = 18.0;
+    CircleAvatar avatar;
+    if (user == null && chatSession != null) {
+      avatar = CircleAvatar(
+          maxRadius: maxRadius,
+          backgroundImage: getAvatar(chatSession!.avatar));
+    } else if (user?.id == _bot.id && chatSession != null) {
+      avatar = CircleAvatar(
+          maxRadius: maxRadius,
+          backgroundImage: getAvatar(chatSession!.avatar));
+    } else {
+      avatar = const CircleAvatar(
+        maxRadius: maxRadius,
+        backgroundImage: AssetImage('assets/user.jpeg'),
+      );
+    }
+    return SizedBox(width: 50.0, height: 40.0, child: Center(child: avatar));
+  }
+
   void _handlePreviewDataFetched(
     types.TextMessage message,
     types.PreviewData previewData,
@@ -231,18 +278,31 @@ class ChatPageState extends State<ChatPage> {
       id: const Uuid().v4(),
       text: "loading...",
     );
-    _addMessage(botMessage);
     var text = '';
-    final List<ChatMessage> messages = [];
-    for (var i = 0; i < _messages.length; i++) {
-      final message = _messages[i] as types.TextMessage;
-      messages.add(ChatMessage(
-        message.author == _user ? "user" : "asistant",
-        message.text,
-      ));
+    //last 5 messages
+    final List<ChatMessage> messages = _messages
+        .where((element) => element.id != "0") //filter out the first message
+        .map((e) => ChatMessage(
+              (e as types.TextMessage).text,
+              e.author == _user ? "user" : "asistant",
+            ))
+        .toList()
+        .reversed
+        .take(5)
+        .toList();
+    //add summarized message
+    if (chatSession!.sumarizePrompt != "") {
+      messages.insert(
+          0,
+          ChatMessage(
+            "user conversation summarization : ${chatSession!.sumarizePrompt}",
+            "system",
+          ));
     }
-    ai.run(messages).listen((event) {
-      // ai.getFormatter().filterResponse(event);
+    //add the current message
+    _addMessage(botMessage);
+
+    ai.chat(messages).listen((event) {
       text += event;
       var json = botMessage.toJson();
       json['text'] = text;
@@ -252,34 +312,48 @@ class ChatPageState extends State<ChatPage> {
       setState(() {
         _messages[index] = updateMessage;
       });
+    }).onDone(() async {
+      saveMessage(message);
+      final sumarizePrompt = await ai.sumarizeHistory(messages);
+      await saveSumarizePrompt(sumarizePrompt, int.parse(botMessage.id));
     });
   }
 
-  void _loadMessages() async {
-    List<types.Message> messagesList = [];
-    var message = types.TextMessage(
-      author: _bot,
-      id: '0',
-      text: "hi, how can I help you?",
-    );
-    messagesList.add(message);
-    setState(() {
-      _messages = messagesList;
-    });
+  Future<int> saveSumarizePrompt(String sumarizePrompt, int limitId) async {
+    return (global.database.update(global.database.chats)
+          ..where((c) => c.id.equals(chatSession!.id)))
+        .write(table.ChatsCompanion(
+            sumarizePrompt: Value(sumarizePrompt),
+            sumarizeMsgId: Value(limitId)));
+  }
+
+  Future<int> saveMessage(types.TextMessage message) async {
+    return global.database
+        .into(global.database.messages)
+        .insert(table.MessagesCompanion.insert(
+          chatId: chatSession!.id,
+          message: message.text,
+          author: message.author.id,
+          type: Value(MessageType.text as int),
+        ));
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+      appBar: AppBar(
+        title: Text(chatSession == null ? "a" : chatSession!.title),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_horiz),
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pushNamed(context, '/chat_setting',
+                  arguments: chatSession);
             },
           ),
-          title: Text(chatSession.name),
-        ),
-        body: Chat(
+        ],
+      ),
+      body: Stack(children: [
+        chat_ui.Chat(
           messages: _messages,
           onAttachmentPressed: _handleAttachmentPressed,
           onMessageTap: _handleMessageTap,
@@ -288,7 +362,8 @@ class ChatPageState extends State<ChatPage> {
           showUserAvatars: true,
           showUserNames: true,
           user: _user,
-          theme: const DefaultChatTheme(
+          avatarBuilder: _buildAvatar,
+          theme: const chat_ui.DefaultChatTheme(
             seenIcon: Text(
               'read',
               style: TextStyle(
@@ -297,5 +372,5 @@ class ChatPageState extends State<ChatPage> {
             ),
           ),
         ),
-      );
+      ]));
 }

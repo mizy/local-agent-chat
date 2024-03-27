@@ -1,15 +1,15 @@
 class ChatSession {
-  final String id;
+  final int id;
   final String name;
-  final String lastMessage;
-  final DateTime lastMessageTime;
-  final String avatarUrl;
+  final String? lastMessage;
+  final DateTime? lastMessageTime;
+  final String avatar;
 
   ChatSession({
     required this.id,
     required this.name,
     required this.lastMessage,
     required this.lastMessageTime,
-    required this.avatarUrl,
+    required this.avatar,
   });
 }

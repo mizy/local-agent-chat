@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:chat_gguf/format/gemma_format.dart';
-import 'package:chat_gguf/settings.dart';
+import 'package:chat_gguf/utils.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:llama_cpp_dart/llama_cpp_dart.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import 'store/settings.dart';
 
 class Message {
   final String command;
@@ -24,24 +28,57 @@ class AI {
     stdout.writeln("AI init...");
   }
 
-  String useSettings(Settings settings) {
+  Future<String> useSettings(Settings settings) async {
     if (type == "llama.cpp") {
-      if (settings.modelFilePath == null || settings.promptTemplate == null) {
-        return "Model file path and prompt template must be set";
+      final params = settings.llamaParams;
+      if (params["model"] == null) {
+        return "Model file path  must be set";
       }
-      llamaParams["model"] = settings.modelFilePath!;
-      llamaParams["template"] = settings.promptTemplate!;
+      final file = File(params["model"]!);
+      if (!file.existsSync()) {
+        return "Model file not found";
+      }
+      final err = await requestPermission();
+      if (err != "") {
+        return err;
+      }
+
+      llamaParams = settings.llamaParams;
       llamaInstance?.dispose();
-      llamaInstance = LlamaCPP(llamaParams);
+      llamaInstance = LlamaCPP();
+      final res = await llamaInstance?.init(llamaParams);
+      if (!res!) {
+        llamaInstance = null;
+        return "Failed to init llama.cpp";
+      }
+      if (settings.promptTemplate != null) {
+        llamaInstance!.setTemplate(settings.promptTemplate ?? "");
+      }
     }
     return "";
   }
 
-  Stream<String> run(List<ChatMessage> messages) {
+  Stream<String> chat(List<ChatMessage> messages) {
     if (type == "llama.cpp") {
       return llamaInstance!.chat(messages);
     }
     return const Stream.empty();
+  }
+
+  Future<String> sumarizeHistory(List<ChatMessage> messages) async {
+    String conversation = "";
+    for (ChatMessage message in messages) {
+      conversation += "${message.role}: ${message.content}\n";
+    }
+    String prompt =
+        "Please provide a summary of the user's chat topics and purpose concisely and clearly. This summary should be used as the context for future conversations.  and should not exceed 200 characters. conversation:\n $conversation ";
+    final newMessages = [...messages, ChatMessage(prompt, "user")];
+    final summaryList = await chat(newMessages).toList();
+    String summary = summaryList.join(' ');
+    if (summary.length > 200) {
+      summary = summary.substring(0, 200); // 限制长度为200字符
+    }
+    return summary;
   }
 
   void dispose() {
@@ -52,3 +89,4 @@ class AI {
 }
 
 final gemma = GemmaFormat();
+AI ai = AI();

@@ -1,6 +1,13 @@
-import 'package:intl/intl.dart';
+import 'dart:io';
 
-String formatTime(DateTime time) {
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+String formatTime(DateTime? time) {
+  if (time == null) {
+    return '';
+  }
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final yesterday = today.subtract(const Duration(days: 1));
@@ -19,4 +26,24 @@ String formatTime(DateTime time) {
     // 如果时间是一周前，返回 "M月d日" 格式的时间
     return DateFormat('M月d日').format(time);
   }
+}
+
+ImageProvider<Object> getAvatar(String url) {
+  return url.startsWith("assets")
+      ? AssetImage(url)
+      : NetworkImage(url) as ImageProvider<Object>;
+}
+
+Future<String> requestPermission() async {
+  if (Platform.isMacOS) {
+    return "";
+  }
+  var status = await Permission.storage.status;
+  if (!status.isGranted) {
+    status = await Permission.storage.request();
+    if (!status.isGranted) {
+      return "Permission denied";
+    }
+  }
+  return "";
 }

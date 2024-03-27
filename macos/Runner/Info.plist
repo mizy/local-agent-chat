@@ -28,5 +28,7 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+  <key>NSFileReadUsageDescription</key>
+  <string>need read model file</string>
 </dict>
 </plist>

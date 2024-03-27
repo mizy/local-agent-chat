@@ -42,6 +42,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 assets/models
-llbllm.so
-ggml-metal.metal
+./llbllm.so
+./ggml-metal.metal
 pubspec.lock

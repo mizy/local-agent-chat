@@ -19,15 +19,12 @@ A new Flutter FFI plugin project.
   # `../src/*` so that the C sources can be shared among all target platforms.
   s.source           = { :path => '.' }
   s.source_files     = 'Classes/**/*'
-  s.compiler_flags = '-fPIC -O3','-pthread','-fno-objc-arc','-Ofast','-DGGML_USE_METAL', '-DGGML_USE_ACCELERATE', '-DACCELERATE_NEW_LAPACK','-DACCELERATE_LAPACK_ILP64'
+  s.compiler_flags = '-fPIC -O3','-pthread','-fno-objc-arc','-Ofast','-DGGML_USE_METAL','-DNDEBUG', '-DGGML_USE_ACCELERATE', '-DACCELERATE_NEW_LAPACK','-DACCELERATE_LAPACK_ILP64'
   s.frameworks = 'Foundation','Accelerate','Metal','MetalKit','MetalPerformanceShaders'
-  s.resource_bundles = {
-    'llama_cpp_dart' => ['ggml-metal.metal']
-  }
   s.dependency 'FlutterMacOS' 
   s.library = 'c++'
   s.platform = :osx, '12'
-  s.public_header_files = 'Classes/../../src/llama.cpp/**/*.h'
+  s.public_header_files = 'Classes/**/*.h'
   s.pod_target_xcconfig = { 
     'DEFINES_MODULE' => 'YES',
     'HEADER_SEARCH_PATHS' => '"${SRCROOT}/../../llama_cpp_dart/src/llama.cpp/"'
