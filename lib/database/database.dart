@@ -4,6 +4,7 @@ import 'package:chat_gguf/chat_list/chat_session.dart';
 import 'package:chat_gguf/database/tables.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart';
@@ -28,30 +29,51 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
-    return MigrationStrategy(
-      onCreate: (Migrator m) async {
-        await m.createAll();
-      },
-      onUpgrade: (Migrator m, int from, int to) async {
-        m.database.allTables;
-        m.database.allSchemaEntities;
-      },
-    );
+    return MigrationStrategy(onCreate: (Migrator m) async {
+      await m.createAll();
+    }, onUpgrade: (Migrator m, int from, int to) async {
+      autoMigrate(m);
+    });
+  }
+
+  Future<void> autoMigrate(Migrator m) async {
+    final nowTables = m.database.allTables;
+    final allTablesBefore =
+        await customSelect('SELECT name FROM sqlite_master WHERE type="table"')
+            .map((QueryRow row) => row.read<String>('name'))
+            .get();
+
+    for (var table in nowTables) {
+      if (!allTablesBefore.contains(table.actualTableName)) {
+        await m.createTable(table);
+      } else {
+        final columnsBefore = await customSelect(
+                'PRAGMA table_info(${table.actualTableName})',
+                readsFrom: {table})
+            .map((QueryRow row) => row.read<String>('name'))
+            .get();
+        for (var column in table.$columns) {
+          if (!columnsBefore.contains(column.$name)) {
+            await m.addColumn(table, column);
+          }
+        }
+      }
+    }
   }
 
   Future<List<ChatSession>> getChatsWithLastMessage() {
     Future<List<ChatSession>> sessions = Future.value([]);
     try {
       sessions = customSelect(
-        'SELECT c.*, m.message AS last_message_content, m.updatedAt AS last_message_time '
+        'SELECT c.*, m.message AS last_message_content, m.updated_at AS last_message_time '
         'FROM Chats c '
         'LEFT JOIN Messages m ON c.id = m.chat_id '
         'GROUP BY c.id '
-        'ORDER BY m.updatedAt DESC',
+        'ORDER BY m.updated_at DESC',
         readsFrom: {chats, messages},
       ).map((row) {
         final avatarUrl = row.read<String>('avatar');
@@ -76,6 +98,8 @@ class AppDatabase extends _$AppDatabase {
   Future<List<Message>> getMessagesByChatId(int chatId) {
     return (select(messages)
           ..where((m) => m.chatId.equals(chatId))
+          ..orderBy(
+              [(m) => OrderingTerm.desc(m.createdAt)]) // 根据createdAt字段降序排序
           ..limit(20))
         .get();
   }
@@ -96,7 +120,12 @@ LazyDatabase _openConnection() {
     // for your app.
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'db.sqlite'));
-
+    if (!kReleaseMode) {
+      // 在开发模式和测试模式下，删除数据库文件
+      if (await file.exists()) {
+        // await file.delete();
+      }
+    }
     // Also work around limitations on old Android versions
     if (Platform.isAndroid) {
       await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();

@@ -84,7 +84,9 @@
     "ggml-quants.c": "cpp",
     "ggml.c": "cpp",
     "ggml-backend.c": "cpp",
-    "cassert": "cpp"
+    "cassert": "cpp",
+    "execution": "cpp",
+    "future": "cpp"
   },
   "C_Cpp.errorSquiggles": "disabled",
   "cmake.configureOnOpen": true

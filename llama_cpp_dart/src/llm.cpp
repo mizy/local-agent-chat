@@ -73,6 +73,8 @@ int llm_init(int argc, char **argv, dart_logger *log_output)
 
 int llm_completion(const char *prompt, dart_output *output)
 {
+  llama_sampling_reset(ctx_sampling);
+  llama_batch_clear(batch);
   std::string prompt_string = std::string(prompt);
   std::vector<llama_token> tokens_list = ::llama_tokenize(ctx, std::string(prompt), add_bos_token, true);
 
@@ -106,8 +108,9 @@ int llm_completion(const char *prompt, dart_output *output)
     }
     const llama_token new_token_id = llama_sampling_sample(ctx_sampling, ctx, ctx_guidance, batch.n_tokens - 1);
     llama_sampling_accept(ctx_sampling, ctx, new_token_id, true);
+    const char *text = llama_token_get_text(model, new_token_id);
     // is it an end of stream?
-    if (new_token_id == llama_token_eos(model))
+    if (new_token_id == llama_token_eos(model) || strcmp(text, "<|im_start|>") == 0 || strcmp(text, "<|im_end|>") == 0)
     {
       stop_generation.store(false);
       output("", true);
@@ -116,7 +119,6 @@ int llm_completion(const char *prompt, dart_output *output)
     // callback
     std::string token_str = llama_token_to_piece(ctx, new_token_id);
     output(token_str.c_str(), false);
-
     llama_batch_clear(batch);
     llama_batch_add(batch, new_token_id, n_cur, {0}, true);
 
@@ -141,7 +143,7 @@ inline std::string format_chat(struct llama_chat_message *chat[], size_t length)
     alloc_size += strlen(chat[i]->content);
   }
   std::vector<char> buf(alloc_size * 2);
-  int32_t res = llama_chat_apply_template(model, chat_template, chatList.data(), chatList.size(), add_bos_token, buf.data(), buf.size());
+  int32_t res = llama_chat_apply_template(model, chat_template, chatList.data(), chatList.size(), true, buf.data(), buf.size());
   if (res < 0)
   {
     std::string input_prefix = params.input_prefix;

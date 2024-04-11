@@ -1,5 +1,6 @@
 import 'package:chat_gguf/bottom_bar/bar.dart';
 import 'package:chat_gguf/chat_list/chat_session.dart';
+import 'package:chat_gguf/chat_list/load_status.dart';
 import 'package:chat_gguf/database/database.dart';
 import 'package:chat_gguf/main.dart';
 import 'package:chat_gguf/store/settings.dart';
@@ -22,30 +23,31 @@ class ChatListPageState extends State<ChatListPage> {
   @override
   void initState() {
     super.initState();
-    chatsFuture = GlobalStore().database.getChatsWithLastMessage();
+    refresh();
+    settings.autoLoad();
   }
 
   void refresh() {
     setState(() {
-      chatsFuture = GlobalStore().database.getChatsWithLastMessage();
+      chatsFuture = global.database.getChatsWithLastMessage();
     });
   }
 
   void addSession() async {
-    final chatList = await chatsFuture;
     final database = GlobalStore().database;
     final chat = ChatsCompanion.insert(
-        title: 'New Chat ${chatList.length}',
+        title: '',
         avatar: 'assets/bot1.jpeg',
+        summaryTitle: const Value(""),
         sumarizePrompt: const Value(""));
     final id = await database.into(database.chats).insert(chat);
     if (id < 0) {
       EasyLoading.showError('Add Chat Failed');
       return;
     }
-    refresh();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Navigator.pushNamed(context, '/chat', arguments: id);
+      Navigator.pushNamed(context, '/chat', arguments: id)
+          .then((_) => {refresh()});
     });
   }
 
@@ -71,16 +73,10 @@ class ChatListPageState extends State<ChatListPage> {
             const Text('GGUF Chat'),
             const SizedBox(width: 8.0),
             Tooltip(
-              message: settings.llmLoaded ? 'Model Loaded' : 'Model Not Loaded',
-              child: Container(
-                width: 15.0,
-                height: 15.0,
-                decoration: BoxDecoration(
-                  color: settings.llmLoaded ? Colors.green : Colors.grey,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
+                message: settings.llmLoaded == LoadStatus.loaded
+                    ? 'Model Loaded'
+                    : 'Model Not Loaded',
+                child: LoadingBox(status: settings.llmLoaded)),
           ],
         ),
         shadowColor: Theme.of(context).colorScheme.shadow,
@@ -123,7 +119,7 @@ class ChatListPageState extends State<ChatListPage> {
                         backgroundImage: getAvatar(item.avatar),
                       ),
                       title: Text(
-                        item.name,
+                        item.name == "" ? "new chat" : item.name,
                         style: const TextStyle(
                           fontSize: 18.0,
                           fontWeight: FontWeight.bold,

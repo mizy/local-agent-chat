@@ -398,8 +398,17 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
       const VerificationMeta('sumarizePrompt');
   @override
   late final GeneratedColumn<String> sumarizePrompt = GeneratedColumn<String>(
-      'sumarize_prompt', aliasedName, true,
+      'sumarize_prompt', aliasedName, false,
       additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 200),
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(""));
+  static const VerificationMeta _summaryTitleMeta =
+      const VerificationMeta('summaryTitle');
+  @override
+  late final GeneratedColumn<String> summaryTitle = GeneratedColumn<String>(
+      'summary_title', aliasedName, false,
+      additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 64),
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant(""));
@@ -413,7 +422,7 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
       $customConstraints: 'REFERENCES messages(id)');
   @override
   List<GeneratedColumn> get $columns =>
-      [id, title, avatar, sumarizePrompt, sumarizeMsgId];
+      [id, title, avatar, sumarizePrompt, summaryTitle, sumarizeMsgId];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -445,6 +454,12 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
           sumarizePrompt.isAcceptableOrUnknown(
               data['sumarize_prompt']!, _sumarizePromptMeta));
     }
+    if (data.containsKey('summary_title')) {
+      context.handle(
+          _summaryTitleMeta,
+          summaryTitle.isAcceptableOrUnknown(
+              data['summary_title']!, _summaryTitleMeta));
+    }
     if (data.containsKey('sumarize_msg_id')) {
       context.handle(
           _sumarizeMsgIdMeta,
@@ -466,8 +481,10 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
           .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
       avatar: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}avatar'])!,
-      sumarizePrompt: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}sumarize_prompt']),
+      sumarizePrompt: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}sumarize_prompt'])!,
+      summaryTitle: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}summary_title'])!,
       sumarizeMsgId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}sumarize_msg_id']),
     );
@@ -483,13 +500,15 @@ class Chat extends DataClass implements Insertable<Chat> {
   final int id;
   final String title;
   final String avatar;
-  final String? sumarizePrompt;
+  final String sumarizePrompt;
+  final String summaryTitle;
   final int? sumarizeMsgId;
   const Chat(
       {required this.id,
       required this.title,
       required this.avatar,
-      this.sumarizePrompt,
+      required this.sumarizePrompt,
+      required this.summaryTitle,
       this.sumarizeMsgId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -497,9 +516,8 @@ class Chat extends DataClass implements Insertable<Chat> {
     map['id'] = Variable<int>(id);
     map['title'] = Variable<String>(title);
     map['avatar'] = Variable<String>(avatar);
-    if (!nullToAbsent || sumarizePrompt != null) {
-      map['sumarize_prompt'] = Variable<String>(sumarizePrompt);
-    }
+    map['sumarize_prompt'] = Variable<String>(sumarizePrompt);
+    map['summary_title'] = Variable<String>(summaryTitle);
     if (!nullToAbsent || sumarizeMsgId != null) {
       map['sumarize_msg_id'] = Variable<int>(sumarizeMsgId);
     }
@@ -511,9 +529,8 @@ class Chat extends DataClass implements Insertable<Chat> {
       id: Value(id),
       title: Value(title),
       avatar: Value(avatar),
-      sumarizePrompt: sumarizePrompt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(sumarizePrompt),
+      sumarizePrompt: Value(sumarizePrompt),
+      summaryTitle: Value(summaryTitle),
       sumarizeMsgId: sumarizeMsgId == null && nullToAbsent
           ? const Value.absent()
           : Value(sumarizeMsgId),
@@ -527,7 +544,8 @@ class Chat extends DataClass implements Insertable<Chat> {
       id: serializer.fromJson<int>(json['id']),
       title: serializer.fromJson<String>(json['title']),
       avatar: serializer.fromJson<String>(json['avatar']),
-      sumarizePrompt: serializer.fromJson<String?>(json['sumarizePrompt']),
+      sumarizePrompt: serializer.fromJson<String>(json['sumarizePrompt']),
+      summaryTitle: serializer.fromJson<String>(json['summaryTitle']),
       sumarizeMsgId: serializer.fromJson<int?>(json['sumarizeMsgId']),
     );
   }
@@ -538,7 +556,8 @@ class Chat extends DataClass implements Insertable<Chat> {
       'id': serializer.toJson<int>(id),
       'title': serializer.toJson<String>(title),
       'avatar': serializer.toJson<String>(avatar),
-      'sumarizePrompt': serializer.toJson<String?>(sumarizePrompt),
+      'sumarizePrompt': serializer.toJson<String>(sumarizePrompt),
+      'summaryTitle': serializer.toJson<String>(summaryTitle),
       'sumarizeMsgId': serializer.toJson<int?>(sumarizeMsgId),
     };
   }
@@ -547,14 +566,15 @@ class Chat extends DataClass implements Insertable<Chat> {
           {int? id,
           String? title,
           String? avatar,
-          Value<String?> sumarizePrompt = const Value.absent(),
+          String? sumarizePrompt,
+          String? summaryTitle,
           Value<int?> sumarizeMsgId = const Value.absent()}) =>
       Chat(
         id: id ?? this.id,
         title: title ?? this.title,
         avatar: avatar ?? this.avatar,
-        sumarizePrompt:
-            sumarizePrompt.present ? sumarizePrompt.value : this.sumarizePrompt,
+        sumarizePrompt: sumarizePrompt ?? this.sumarizePrompt,
+        summaryTitle: summaryTitle ?? this.summaryTitle,
         sumarizeMsgId:
             sumarizeMsgId.present ? sumarizeMsgId.value : this.sumarizeMsgId,
       );
@@ -565,14 +585,15 @@ class Chat extends DataClass implements Insertable<Chat> {
           ..write('title: $title, ')
           ..write('avatar: $avatar, ')
           ..write('sumarizePrompt: $sumarizePrompt, ')
+          ..write('summaryTitle: $summaryTitle, ')
           ..write('sumarizeMsgId: $sumarizeMsgId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, title, avatar, sumarizePrompt, sumarizeMsgId);
+  int get hashCode => Object.hash(
+      id, title, avatar, sumarizePrompt, summaryTitle, sumarizeMsgId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -581,6 +602,7 @@ class Chat extends DataClass implements Insertable<Chat> {
           other.title == this.title &&
           other.avatar == this.avatar &&
           other.sumarizePrompt == this.sumarizePrompt &&
+          other.summaryTitle == this.summaryTitle &&
           other.sumarizeMsgId == this.sumarizeMsgId);
 }
 
@@ -588,13 +610,15 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
   final Value<int> id;
   final Value<String> title;
   final Value<String> avatar;
-  final Value<String?> sumarizePrompt;
+  final Value<String> sumarizePrompt;
+  final Value<String> summaryTitle;
   final Value<int?> sumarizeMsgId;
   const ChatsCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.avatar = const Value.absent(),
     this.sumarizePrompt = const Value.absent(),
+    this.summaryTitle = const Value.absent(),
     this.sumarizeMsgId = const Value.absent(),
   });
   ChatsCompanion.insert({
@@ -602,6 +626,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
     required String title,
     required String avatar,
     this.sumarizePrompt = const Value.absent(),
+    this.summaryTitle = const Value.absent(),
     this.sumarizeMsgId = const Value.absent(),
   })  : title = Value(title),
         avatar = Value(avatar);
@@ -610,6 +635,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
     Expression<String>? title,
     Expression<String>? avatar,
     Expression<String>? sumarizePrompt,
+    Expression<String>? summaryTitle,
     Expression<int>? sumarizeMsgId,
   }) {
     return RawValuesInsertable({
@@ -617,6 +643,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
       if (title != null) 'title': title,
       if (avatar != null) 'avatar': avatar,
       if (sumarizePrompt != null) 'sumarize_prompt': sumarizePrompt,
+      if (summaryTitle != null) 'summary_title': summaryTitle,
       if (sumarizeMsgId != null) 'sumarize_msg_id': sumarizeMsgId,
     });
   }
@@ -625,13 +652,15 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
       {Value<int>? id,
       Value<String>? title,
       Value<String>? avatar,
-      Value<String?>? sumarizePrompt,
+      Value<String>? sumarizePrompt,
+      Value<String>? summaryTitle,
       Value<int?>? sumarizeMsgId}) {
     return ChatsCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
       avatar: avatar ?? this.avatar,
       sumarizePrompt: sumarizePrompt ?? this.sumarizePrompt,
+      summaryTitle: summaryTitle ?? this.summaryTitle,
       sumarizeMsgId: sumarizeMsgId ?? this.sumarizeMsgId,
     );
   }
@@ -651,6 +680,9 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
     if (sumarizePrompt.present) {
       map['sumarize_prompt'] = Variable<String>(sumarizePrompt.value);
     }
+    if (summaryTitle.present) {
+      map['summary_title'] = Variable<String>(summaryTitle.value);
+    }
     if (sumarizeMsgId.present) {
       map['sumarize_msg_id'] = Variable<int>(sumarizeMsgId.value);
     }
@@ -664,6 +696,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
           ..write('title: $title, ')
           ..write('avatar: $avatar, ')
           ..write('sumarizePrompt: $sumarizePrompt, ')
+          ..write('summaryTitle: $summaryTitle, ')
           ..write('sumarizeMsgId: $sumarizeMsgId')
           ..write(')'))
         .toString();

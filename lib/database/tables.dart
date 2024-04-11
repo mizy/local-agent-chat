@@ -6,8 +6,11 @@ class Chats extends Table {
   TextColumn get avatar => text().withLength()();
   TextColumn get sumarizePrompt =>
       text().withLength(max: 200).withDefault(const Constant(""))();
+  TextColumn get summaryTitle =>
+      text().withLength(max: 64).withDefault(const Constant(""))();
   IntColumn get sumarizeMsgId =>
       integer().customConstraint('REFERENCES messages(id)').nullable()();
+  TextColumn get systemPrompt => text().nullable()();
 }
 
 enum MessageType {

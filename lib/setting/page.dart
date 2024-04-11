@@ -1,8 +1,11 @@
+import "dart:io";
+
 import "package:chat_gguf/ai.dart";
 import "package:chat_gguf/store/settings.dart";
 import "package:flutter/material.dart";
 import "package:file_picker/file_picker.dart";
 import "package:flutter_easyloading/flutter_easyloading.dart";
+import "package:macos_secure_bookmarks/macos_secure_bookmarks.dart";
 import "package:provider/provider.dart";
 import 'package:path/path.dart' as path;
 

@@ -1,7 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:chat_gguf/chat_list/chat_session.dart';
+import 'package:chat_gguf/database/database.dart';
 import 'package:chat_gguf/format/gemma_format.dart';
+import 'package:chat_gguf/main.dart';
 import 'package:chat_gguf/utils.dart';
+import 'package:drift/drift.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:llama_cpp_dart/llama_cpp_dart.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -65,7 +69,9 @@ class AI {
     return const Stream.empty();
   }
 
-  Future<String> sumarizeHistory(List<ChatMessage> messages) async {
+  Future<String> sumarizeHistory(
+    List<ChatMessage> messages,
+  ) async {
     String conversation = "";
     for (ChatMessage message in messages) {
       conversation += "${message.role}: ${message.content}\n";
@@ -78,6 +84,27 @@ class AI {
     if (summary.length > 200) {
       summary = summary.substring(0, 200); // 限制长度为200字符
     }
+    return summary;
+  }
+
+  Future<String> sumarizeTitle(
+    List<ChatMessage> messages,
+  ) async {
+    String conversation = "";
+    for (ChatMessage message in messages) {
+      conversation += "${message.role}: ${message.content}\n";
+    }
+    String prompt =
+        "provide a title of below conversation \n'''\n$conversation\n'''\n title is:";
+    final newMessages = [ChatMessage(prompt, "system")];
+    final summaryList = await chat(newMessages).toList();
+    String summary = summaryList.join('');
+
+    if (summary.length > 20) {
+      summary = summary.substring(0, 20);
+    }
+    summary = summary.replaceAll("\n", "");
+    summary = summary.replaceAll(RegExp(r'\*\*|\*|__|_'), '');
     return summary;
   }
 

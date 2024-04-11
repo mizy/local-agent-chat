@@ -2,4 +2,5 @@
 #include "../../src/llama.cpp/common/common.cpp"
 #include "../../src/llama.cpp/common/grammar-parser.cpp"
 #include "../../src/llama.cpp/unicode.cpp"
+#include "../../src/llama.cpp/unicode-data.cpp"
 #include "../../src/llm.cpp"

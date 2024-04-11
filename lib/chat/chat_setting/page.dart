@@ -14,7 +14,6 @@ class ChatSettingPageState extends State<ChatSettingPage> {
   @override
   void initState() {
     super.initState();
-    // summarizePrompt = ai.sumarizePrompt;
   }
 
   @override
