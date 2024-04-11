@@ -73,10 +73,12 @@ int llm_init(int argc, char **argv, dart_logger *log_output)
 
 int llm_completion(const char *prompt, dart_output *output)
 {
-  llama_sampling_reset(ctx_sampling);
-  llama_batch_clear(batch);
+  llama_kv_cache_clear(ctx);
+  llama_sampling_free(ctx_sampling);
+  ctx_sampling = llama_sampling_init(params.sparams);
+  // llama_kv_cache_clear(ctx);
   std::string prompt_string = std::string(prompt);
-  std::vector<llama_token> tokens_list = ::llama_tokenize(ctx, std::string(prompt), add_bos_token, true);
+  std::vector<llama_token> tokens_list = ::llama_tokenize(ctx, prompt_string, add_bos_token, true);
 
   for (size_t i = 0; i < tokens_list.size(); i++)
   {
@@ -84,12 +86,6 @@ int llm_completion(const char *prompt, dart_output *output)
   }
   // llama_decode will output logits only for the last token of the prompt
   batch.logits[batch.n_tokens - 1] = true;
-
-  if (llama_decode(ctx, batch) != 0)
-  {
-    LOG_TEE("%s: llama_decode() failed\n", __func__);
-    return 1;
-  }
 
   for (int32_t i = 1; i < params.n_parallel; ++i)
   {
@@ -105,6 +101,12 @@ int llm_completion(const char *prompt, dart_output *output)
       stop_generation.store(false);
       output("", true);
       return 0;
+    }
+
+    if (llama_decode(ctx, batch) != 0)
+    {
+      LOG_TEE("%s: llama_decode() failed\n", __func__);
+      return 1;
     }
     const llama_token new_token_id = llama_sampling_sample(ctx_sampling, ctx, ctx_guidance, batch.n_tokens - 1);
     llama_sampling_accept(ctx_sampling, ctx, new_token_id, true);
@@ -123,12 +125,6 @@ int llm_completion(const char *prompt, dart_output *output)
     llama_batch_add(batch, new_token_id, n_cur, {0}, true);
 
     n_cur += 1;
-
-    if (llama_decode(ctx, batch))
-    {
-      LOG_TEE("%s : failed to eval, return code %d\n", __func__, 1);
-      return 1;
-    }
   }
 
   return 0;

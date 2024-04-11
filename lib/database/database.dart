@@ -69,11 +69,11 @@ class AppDatabase extends _$AppDatabase {
     Future<List<ChatSession>> sessions = Future.value([]);
     try {
       sessions = customSelect(
-        'SELECT c.*, m.message AS last_message_content, m.updated_at AS last_message_time '
+        'SELECT c.*, m.message AS last_message_content, MAX(m.updated_at) AS last_message_time '
         'FROM Chats c '
         'LEFT JOIN Messages m ON c.id = m.chat_id '
         'GROUP BY c.id '
-        'ORDER BY m.updated_at DESC',
+        'ORDER BY last_message_time DESC',
         readsFrom: {chats, messages},
       ).map((row) {
         final avatarUrl = row.read<String>('avatar');

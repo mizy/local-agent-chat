@@ -99,7 +99,7 @@ class AI {
     final newMessages = [ChatMessage(prompt, "system")];
     final summaryList = await chat(newMessages).toList();
     String summary = summaryList.join('');
-
+    print("summaryTitle: $summary");
     if (summary.length > 20) {
       summary = summary.substring(0, 20);
     }

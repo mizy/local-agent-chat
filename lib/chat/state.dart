@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:chat_gguf/ai.dart';
 import 'package:chat_gguf/chat/page.dart';
 import 'package:chat_gguf/database/tables.dart';
@@ -139,8 +141,10 @@ class ChatPageState extends State<ChatPage> {
     );
     var text = '';
     //last 5 messages
-    final List<ChatMessage> messages = _messages.reversed
+    final List<ChatMessage> messages = _messages
         .take(5)
+        .toList()
+        .reversed
         .map((e) => ChatMessage(
               (e as types.TextMessage).text,
               e.author == _user ? "user" : "asistant",
@@ -160,6 +164,7 @@ class ChatPageState extends State<ChatPage> {
     types.TextMessage aiMessage = botMessage;
     ai.chat(messages).listen((event) {
       text += event;
+      stdout.write(event);
       var json = botMessage.toJson();
       json['text'] = text;
       aiMessage = types.TextMessage.fromJson(json);
