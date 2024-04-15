@@ -73,10 +73,9 @@ int llm_init(int argc, char **argv, dart_logger *log_output)
 
 int llm_completion(const char *prompt, dart_output *output)
 {
-  llama_kv_cache_clear(ctx);
   llama_sampling_free(ctx_sampling);
   ctx_sampling = llama_sampling_init(params.sparams);
-  // llama_kv_cache_clear(ctx);
+  llama_kv_cache_clear(ctx); // i think that's necessary
   std::string prompt_string = std::string(prompt);
   std::vector<llama_token> tokens_list = ::llama_tokenize(ctx, prompt_string, add_bos_token, true);
 
