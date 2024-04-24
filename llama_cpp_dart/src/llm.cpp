@@ -30,12 +30,37 @@ static gpt_params params;
 
 static dart_logger *dart_logger_callback;
 static char *chat_template;
+std::map<std::string, std::vector<std::string>> antiprompt_map = {
+    {"chatml",
+     {"<|im_start|>", "<|im_end|>"}},
+    {"llama3",
+     {"<|start_header_id|>", "<|eot_id|>", "<|end_header_id|>"}},
+    {"zephyr",
+     {"<|user|>", "<|end|>", "<|assistant|>"}},
+};
 
 bool add_bos_token = true;
 
 void dart_log_callback(ggml_log_level level, const char *text, void *user_data)
 {
   dart_logger_callback(text);
+}
+
+static bool has_stop_string(gpt_params &params, std::string &last_output)
+{
+
+  for (std::string &antiprompt : params.antiprompt)
+  {
+    size_t extra_padding = 0;
+    size_t search_start_pos = last_output.length() > static_cast<size_t>(antiprompt.length() + extra_padding)
+                                  ? last_output.length() - static_cast<size_t>(antiprompt.length() + extra_padding)
+                                  : 0;
+    if (last_output.find(antiprompt, search_start_pos) != std::string::npos)
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
 int llm_init(int argc, char **argv, dart_logger *log_output)
@@ -68,6 +93,10 @@ int llm_init(int argc, char **argv, dart_logger *log_output)
   n_ctx = llama_n_ctx(ctx);
   batch = llama_batch_init(n_ctx, 0, params.n_parallel);
 
+  if (params.antiprompt.size() == 0 && antiprompt_map.count(chat_template) > 0)
+  {
+    params.antiprompt = antiprompt_map[chat_template];
+  }
   return 0;
 }
 
@@ -109,9 +138,10 @@ int llm_completion(const char *prompt, dart_output *output)
     }
     const llama_token new_token_id = llama_sampling_sample(ctx_sampling, ctx, ctx_guidance, batch.n_tokens - 1);
     llama_sampling_accept(ctx_sampling, ctx, new_token_id, true);
-    const char *text = llama_token_get_text(model, new_token_id);
+    std::string text = std::string(llama_token_get_text(model, new_token_id));
     // is it an end of stream?
-    if (new_token_id == llama_token_eos(model) || strcmp(text, "<|im_start|>") == 0 || strcmp(text, "<|im_end|>") == 0)
+    bool is_antiprompt = has_stop_string(params, text);
+    if (new_token_id == llama_token_eos(model) || is_antiprompt)
     {
       stop_generation.store(false);
       output("", true);
@@ -128,6 +158,7 @@ int llm_completion(const char *prompt, dart_output *output)
 
   return 0;
 }
+
 inline std::string format_chat(struct llama_chat_message *chat[], size_t length)
 {
   size_t alloc_size = 0;

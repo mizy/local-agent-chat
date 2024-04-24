@@ -86,7 +86,9 @@
     "ggml-backend.c": "cpp",
     "cassert": "cpp",
     "execution": "cpp",
-    "future": "cpp"
+    "future": "cpp",
+    "json-schema-to-grammar.cpp": "c",
+    "type_traits": "cpp"
   },
   "C_Cpp.errorSquiggles": "disabled",
   "cmake.configureOnOpen": true

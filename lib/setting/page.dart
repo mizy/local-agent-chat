@@ -28,8 +28,14 @@ class SettingPageState extends State<SettingPage> {
       context: context,
       builder: (BuildContext context) {
         return Wrap(
-          children: <String>['gemma', 'chatml', 'llama2', 'zephyr', 'monarch']
-              .map((String template) {
+          children: <String>[
+            'gemma',
+            'chatml',
+            'llama2',
+            'llama3',
+            'zephyr',
+            'monarch'
+          ].map((String template) {
             return ListTile(
               title: Text(template),
               onTap: () {

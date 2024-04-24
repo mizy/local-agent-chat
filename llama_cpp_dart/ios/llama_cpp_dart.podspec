@@ -19,8 +19,8 @@ A new Flutter FFI plugin project.
   # `../src/*` so that the C sources can be shared among all target platforms.
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
-  s.compiler_flags = '-fPIC -O3','-pthread','-fno-objc-arc','-Ofast','-DNDEBUG','-DGGML_USE_METAL', '-DGGML_USE_ACCELERATE', '-DACCELERATE_NEW_LAPACK','-DACCELERATE_LAPACK_ILP64'
-  s.frameworks= 'Foundation','Accelerate','Metal','MetalKit','MetalPerformanceShaders'
+  s.compiler_flags = '-fPIC -O3','-pthread','-fno-objc-arc','-Ofast','-DGGML_USE_METAL','-DNDEBUG', '-DGGML_USE_ACCELERATE', '-DACCELERATE_NEW_LAPACK','-DACCELERATE_LAPACK_ILP64'
+  s.frameworks = 'Foundation','Accelerate','Metal','MetalKit','MetalPerformanceShaders'
   s.resources = ['ggml-metal.metal']
   s.resource_bundles = {
     'llama_cpp_dart' => ['ggml-metal.metal']

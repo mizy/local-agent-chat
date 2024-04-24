@@ -1,14 +1,7 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:chat_gguf/chat_list/chat_session.dart';
-import 'package:chat_gguf/database/database.dart';
-import 'package:chat_gguf/format/gemma_format.dart';
-import 'package:chat_gguf/main.dart';
 import 'package:chat_gguf/utils.dart';
-import 'package:drift/drift.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:llama_cpp_dart/llama_cpp_dart.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import 'store/settings.dart';
 
@@ -46,17 +39,16 @@ class AI {
       if (err != "") {
         return err;
       }
-
       llamaParams = settings.llamaParams;
       llamaInstance?.dispose();
       llamaInstance = LlamaCPP();
+      if (settings.promptTemplate != null) {
+        llamaInstance!.setTemplate(settings.promptTemplate ?? "");
+      }
       final res = await llamaInstance?.init(llamaParams);
       if (!res!) {
         llamaInstance = null;
         return "Failed to init llama.cpp";
-      }
-      if (settings.promptTemplate != null) {
-        llamaInstance!.setTemplate(settings.promptTemplate ?? "");
       }
     }
     return "";
@@ -90,13 +82,9 @@ class AI {
   Future<String> sumarizeTitle(
     List<ChatMessage> messages,
   ) async {
-    String conversation = "";
-    for (ChatMessage message in messages) {
-      conversation += "${message.role}: ${message.content}\n";
-    }
     String prompt =
-        "provide a title of below conversation \n'''\n$conversation\n'''\n title is:";
-    final newMessages = [ChatMessage(prompt, "system")];
+        "Return the brief theme of this sentence in four to five words directly, without explanation, punctuation, tone words, or extra text";
+    final newMessages = [...messages, ChatMessage(prompt, "user")];
     final summaryList = await chat(newMessages).toList();
     String summary = summaryList.join('');
     print("summaryTitle: $summary");
@@ -115,5 +103,4 @@ class AI {
   }
 }
 
-final gemma = GemmaFormat();
 AI ai = AI();

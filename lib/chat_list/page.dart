@@ -112,8 +112,12 @@ class ChatListPageState extends State<ChatListPage> {
                     background: Container(color: Colors.red),
                     child: ListTile(
                       onTap: () {
-                        Navigator.pushNamed(context, '/chat',
-                            arguments: item.id);
+                        if (settings.llmLoaded == LoadStatus.loaded) {
+                          Navigator.pushNamed(context, '/chat',
+                              arguments: item.id);
+                        } else {
+                          EasyLoading.showError('Model Not Loaded');
+                        }
                       },
                       leading: CircleAvatar(
                         backgroundImage: getAvatar(item.avatar),
