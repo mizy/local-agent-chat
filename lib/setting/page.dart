@@ -34,7 +34,8 @@ class SettingPageState extends State<SettingPage> {
             'llama2',
             'llama3',
             'zephyr',
-            'monarch'
+            'monarch',
+            'phi3',
           ].map((String template) {
             return ListTile(
               title: Text(template),

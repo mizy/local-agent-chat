@@ -88,8 +88,8 @@ class AI {
     final summaryList = await chat(newMessages).toList();
     String summary = summaryList.join('');
     print("summaryTitle: $summary");
-    if (summary.length > 20) {
-      summary = summary.substring(0, 20);
+    if (summary.length > 30) {
+      summary = summary.substring(0, 30);
     }
     summary = summary.replaceAll("\n", "");
     summary = summary.replaceAll(RegExp(r'\*\*|\*|__|_'), '');

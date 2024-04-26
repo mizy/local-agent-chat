@@ -19,22 +19,21 @@ int main()
   std::vector<const char *> argv = {
       "llm",
       "--model",
-      "/Users/mizy/projects/llama-cpp-gpt-api/models/lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf",
+      "/Users/mizy/projects/llama-cpp-gpt-api/models/microsoft/Phi-3-mini-4k-instruct-gguf/Phi-3-mini-4k-instruct-q4.gguf",
       "--ctx-size",
       "4096",
   };
-
   // Convert vector to raw array
-  std::vector<char *> cargv;
+  std::vector<char *>
+      cargv;
   for (const auto &arg : argv)
   {
     cargv.push_back(strdup(arg));
   }
 
   // Call llm_init
-  set_chat_template("llama3");
+  set_chat_template("phi3");
   int result = llm_init(cargv.size(), cargv.data(), nullptr);
-
   //   char *chat_text = R"(provide a title of below conversation, return the title directly:
   // system: You are a helpful assistant
   // asistant: hi, how can I help you?

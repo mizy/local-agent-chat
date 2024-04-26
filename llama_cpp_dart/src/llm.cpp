@@ -36,6 +36,8 @@ std::map<std::string, std::vector<std::string>> antiprompt_map = {
     {"llama3",
      {"<|start_header_id|>", "<|eot_id|>", "<|end_header_id|>"}},
     {"zephyr",
+     {"<|user|>", "<|assistant|>"}},
+    {"phi3",
      {"<|user|>", "<|end|>", "<|assistant|>"}},
 };
 
@@ -102,6 +104,7 @@ int llm_init(int argc, char **argv, dart_logger *log_output)
 
 int llm_completion(const char *prompt, dart_output *output)
 {
+  stop_generation.store(false);
   llama_sampling_free(ctx_sampling);
   ctx_sampling = llama_sampling_init(params.sparams);
   llama_kv_cache_clear(ctx); // i think that's necessary
@@ -141,7 +144,7 @@ int llm_completion(const char *prompt, dart_output *output)
     std::string text = std::string(llama_token_get_text(model, new_token_id));
     // is it an end of stream?
     bool is_antiprompt = has_stop_string(params, text);
-    if (new_token_id == llama_token_eos(model) || is_antiprompt)
+    if (is_antiprompt || llama_token_is_eog(model, new_token_id))
     {
       stop_generation.store(false);
       output("", true);
@@ -204,8 +207,9 @@ void llm_stop(void)
 
 void llm_cleanup(void)
 {
+  chat_template = nullptr;
   stop_generation.store(true);
-  llama_print_timings(ctx);
+  llama_kv_cache_clear(ctx);
   llama_free(ctx);
   if (ctx_guidance)
   {

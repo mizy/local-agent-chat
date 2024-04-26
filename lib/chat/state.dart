@@ -25,6 +25,8 @@ class ChatPageState extends State<ChatPage> {
   final _bot = const types.User(
     id: 'bot',
   );
+
+  bool responsing = false;
   @override
   void initState() {
     super.initState();
@@ -120,6 +122,9 @@ class ChatPageState extends State<ChatPage> {
   }
 
   void _handleSendPressed(types.PartialText message) {
+    if (responsing) {
+      return;
+    }
     final textMessage = types.TextMessage(
       author: _user,
       createdAt: DateTime.now().millisecondsSinceEpoch,
@@ -162,6 +167,9 @@ class ChatPageState extends State<ChatPage> {
     //add the current message
     _addMessage(botMessage);
     types.TextMessage aiMessage = botMessage;
+    setState(() {
+      responsing = true;
+    });
     ai.chat(messages).listen((event) {
       text += event;
       stdout.write(event);
@@ -174,6 +182,9 @@ class ChatPageState extends State<ChatPage> {
         _messages[index] = aiMessage;
       });
     }).onDone(() async {
+      setState(() {
+        responsing = false;
+      });
       try {
         final id = await saveMessage(aiMessage);
         if (chatSession?.title == "") {
