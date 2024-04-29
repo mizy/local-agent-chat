@@ -1,46 +1,45 @@
-# flutter_application_1
+# LLM Flutter Application
 
-A new Flutter project.
+This is a Flutter application that utilizes the Llama.cpp library to run large LLM models offline. 
+
+## Features
+
+- **Offline Model Execution**: The application is capable of running large LLM models offline, making it ideal for environments with limited or no internet connectivity.
+- **Cross-Platform**: Built with Flutter, this application can be compiled and run on multiple platforms including iOS, Android, and web.
+- **Efficient Performance**: The use of Llama.cpp ensures efficient execution of large models, providing fast and accurate results.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+To get started with this project, clone the repository and navigate to the project directory.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
-## Project Structure
-
-```bash
-lib/
-|-- main.dart
-|-- app/
-|   |-- app.dart
-|   |-- routes.dart
-|-- features/
-|   |-- chat/
-|   |   |-- chat_page.dart
-|   |   |-- chat_viewmodel.dart
-|   |   |-- chat_repository.dart
-|   |   |-- chat_model.dart
-|   |-- settings/
-|   |   |-- settings_page.dart
-|   |   |-- settings_viewmodel.dart
-|   |   |-- settings_repository.dart
-|-- shared/
-|   |-- widgets/
-|   |   |-- custom_app_bar.dart
-|   |   |-- custom_drawer.dart
-|   |-- utils/
-|   |   |-- constants.dart
-|   |   |-- styles.dart
-|-- services/
-|   |-- api_service.dart
-|   |-- database_service.dart
+```sh
+git clone https://github.com/mizy/local-agent-chat.git
+cd local-agent-chat
+git submodule update --init --recursive
 ```
+
+## Building the Project
+
+To build the project, use the following command:
+
+```sh
+flutter build
+```
+
+This will generate a build based on your current platform.
+
+## Running the Project
+
+To run the project, use the following command:
+
+```sh
+flutter run
+```
+
+## Contributing
+
+Contributions are welcome! Please read the contributing guidelines before making any changes.
+
+## License
+
+This project is licensed under the terms of the MIT license.

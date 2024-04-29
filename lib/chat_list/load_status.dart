@@ -1,6 +1,4 @@
-import 'package:chat_gguf/store/settings.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 enum LoadStatus { loading, loaded, none }
 
@@ -56,7 +54,6 @@ class LoadingBoxState extends State<LoadingBox>
 
   @override
   Widget build(BuildContext context) {
-    final setting = context.watch<Settings>();
     return AnimatedBuilder(
       animation: _colorAnimation,
       builder: (context, child) {
@@ -64,7 +61,7 @@ class LoadingBoxState extends State<LoadingBox>
           width: 15.0,
           height: 15.0,
           decoration: BoxDecoration(
-            color: setting.llmLoaded == LoadStatus.loading
+            color: widget.status == LoadStatus.loading
                 ? _colorAnimation.value
                 : _color,
             shape: BoxShape.circle,
