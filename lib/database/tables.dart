@@ -29,3 +29,14 @@ class Messages extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
+
+class Agents extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text().withLength(max: 64)();
+  TextColumn get avatar => text().withLength()();
+  TextColumn get description => text().withLength(max: 200).nullable()();
+  TextColumn get system => text().withLength(max: 2048).nullable()();
+  TextColumn get fewShot => text().withLength(max: 2048).nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}

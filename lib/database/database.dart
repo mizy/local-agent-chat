@@ -24,7 +24,7 @@ class ChatWithLastMessage {
   });
 }
 
-@DriftDatabase(tables: [Chats, Messages])
+@DriftDatabase(tables: [Chats, Messages, Agents])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -123,7 +123,7 @@ LazyDatabase _openConnection() {
     if (!kReleaseMode) {
       // 在开发模式和测试模式下，删除数据库文件
       if (await file.exists()) {
-        // await file.delete();
+        await file.delete();
       }
     }
     // Also work around limitations on old Android versions

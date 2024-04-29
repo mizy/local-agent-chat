@@ -44,7 +44,10 @@ class CustomNavigationBar extends StatelessWidget {
           .toList(),
       onDestinationSelected: (index) {
         if (index == currentIndex) return;
-        Navigator.pushNamed(context, pages[index]['route'] as String);
+        Navigator.pushReplacementNamed(
+          context,
+          pages[index]['route'] as String,
+        );
       },
     );
   }

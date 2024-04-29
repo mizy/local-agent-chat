@@ -1,3 +1,4 @@
+import 'package:chat_gguf/agents/page.dart';
 import 'package:chat_gguf/ai.dart';
 import 'package:chat_gguf/chat/chat_setting/page.dart';
 import 'package:chat_gguf/chat_list/page.dart';
@@ -80,6 +81,7 @@ class _AppLifecycleDisplayState extends State<AppLifecycleDisplay> {
         '/chat_list': (context) => const ChatListPage(),
         '/setting': (context) => const SettingPage(),
         '/chat_setting': (context) => const ChatSettingPage(),
+        '/agent_list': (context) => const AgentListPage(),
       },
     );
   }

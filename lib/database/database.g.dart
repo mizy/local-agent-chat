@@ -420,9 +420,22 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
       type: DriftSqlType.int,
       requiredDuringInsert: false,
       $customConstraints: 'REFERENCES messages(id)');
+  static const VerificationMeta _systemPromptMeta =
+      const VerificationMeta('systemPrompt');
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, title, avatar, sumarizePrompt, summaryTitle, sumarizeMsgId];
+  late final GeneratedColumn<String> systemPrompt = GeneratedColumn<String>(
+      'system_prompt', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        title,
+        avatar,
+        sumarizePrompt,
+        summaryTitle,
+        sumarizeMsgId,
+        systemPrompt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -466,6 +479,12 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
           sumarizeMsgId.isAcceptableOrUnknown(
               data['sumarize_msg_id']!, _sumarizeMsgIdMeta));
     }
+    if (data.containsKey('system_prompt')) {
+      context.handle(
+          _systemPromptMeta,
+          systemPrompt.isAcceptableOrUnknown(
+              data['system_prompt']!, _systemPromptMeta));
+    }
     return context;
   }
 
@@ -487,6 +506,8 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
           .read(DriftSqlType.string, data['${effectivePrefix}summary_title'])!,
       sumarizeMsgId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}sumarize_msg_id']),
+      systemPrompt: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}system_prompt']),
     );
   }
 
@@ -503,13 +524,15 @@ class Chat extends DataClass implements Insertable<Chat> {
   final String sumarizePrompt;
   final String summaryTitle;
   final int? sumarizeMsgId;
+  final String? systemPrompt;
   const Chat(
       {required this.id,
       required this.title,
       required this.avatar,
       required this.sumarizePrompt,
       required this.summaryTitle,
-      this.sumarizeMsgId});
+      this.sumarizeMsgId,
+      this.systemPrompt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -520,6 +543,9 @@ class Chat extends DataClass implements Insertable<Chat> {
     map['summary_title'] = Variable<String>(summaryTitle);
     if (!nullToAbsent || sumarizeMsgId != null) {
       map['sumarize_msg_id'] = Variable<int>(sumarizeMsgId);
+    }
+    if (!nullToAbsent || systemPrompt != null) {
+      map['system_prompt'] = Variable<String>(systemPrompt);
     }
     return map;
   }
@@ -534,6 +560,9 @@ class Chat extends DataClass implements Insertable<Chat> {
       sumarizeMsgId: sumarizeMsgId == null && nullToAbsent
           ? const Value.absent()
           : Value(sumarizeMsgId),
+      systemPrompt: systemPrompt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(systemPrompt),
     );
   }
 
@@ -547,6 +576,7 @@ class Chat extends DataClass implements Insertable<Chat> {
       sumarizePrompt: serializer.fromJson<String>(json['sumarizePrompt']),
       summaryTitle: serializer.fromJson<String>(json['summaryTitle']),
       sumarizeMsgId: serializer.fromJson<int?>(json['sumarizeMsgId']),
+      systemPrompt: serializer.fromJson<String?>(json['systemPrompt']),
     );
   }
   @override
@@ -559,6 +589,7 @@ class Chat extends DataClass implements Insertable<Chat> {
       'sumarizePrompt': serializer.toJson<String>(sumarizePrompt),
       'summaryTitle': serializer.toJson<String>(summaryTitle),
       'sumarizeMsgId': serializer.toJson<int?>(sumarizeMsgId),
+      'systemPrompt': serializer.toJson<String?>(systemPrompt),
     };
   }
 
@@ -568,7 +599,8 @@ class Chat extends DataClass implements Insertable<Chat> {
           String? avatar,
           String? sumarizePrompt,
           String? summaryTitle,
-          Value<int?> sumarizeMsgId = const Value.absent()}) =>
+          Value<int?> sumarizeMsgId = const Value.absent(),
+          Value<String?> systemPrompt = const Value.absent()}) =>
       Chat(
         id: id ?? this.id,
         title: title ?? this.title,
@@ -577,6 +609,8 @@ class Chat extends DataClass implements Insertable<Chat> {
         summaryTitle: summaryTitle ?? this.summaryTitle,
         sumarizeMsgId:
             sumarizeMsgId.present ? sumarizeMsgId.value : this.sumarizeMsgId,
+        systemPrompt:
+            systemPrompt.present ? systemPrompt.value : this.systemPrompt,
       );
   @override
   String toString() {
@@ -586,14 +620,15 @@ class Chat extends DataClass implements Insertable<Chat> {
           ..write('avatar: $avatar, ')
           ..write('sumarizePrompt: $sumarizePrompt, ')
           ..write('summaryTitle: $summaryTitle, ')
-          ..write('sumarizeMsgId: $sumarizeMsgId')
+          ..write('sumarizeMsgId: $sumarizeMsgId, ')
+          ..write('systemPrompt: $systemPrompt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, title, avatar, sumarizePrompt, summaryTitle, sumarizeMsgId);
+  int get hashCode => Object.hash(id, title, avatar, sumarizePrompt,
+      summaryTitle, sumarizeMsgId, systemPrompt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -603,7 +638,8 @@ class Chat extends DataClass implements Insertable<Chat> {
           other.avatar == this.avatar &&
           other.sumarizePrompt == this.sumarizePrompt &&
           other.summaryTitle == this.summaryTitle &&
-          other.sumarizeMsgId == this.sumarizeMsgId);
+          other.sumarizeMsgId == this.sumarizeMsgId &&
+          other.systemPrompt == this.systemPrompt);
 }
 
 class ChatsCompanion extends UpdateCompanion<Chat> {
@@ -613,6 +649,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
   final Value<String> sumarizePrompt;
   final Value<String> summaryTitle;
   final Value<int?> sumarizeMsgId;
+  final Value<String?> systemPrompt;
   const ChatsCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -620,6 +657,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
     this.sumarizePrompt = const Value.absent(),
     this.summaryTitle = const Value.absent(),
     this.sumarizeMsgId = const Value.absent(),
+    this.systemPrompt = const Value.absent(),
   });
   ChatsCompanion.insert({
     this.id = const Value.absent(),
@@ -628,6 +666,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
     this.sumarizePrompt = const Value.absent(),
     this.summaryTitle = const Value.absent(),
     this.sumarizeMsgId = const Value.absent(),
+    this.systemPrompt = const Value.absent(),
   })  : title = Value(title),
         avatar = Value(avatar);
   static Insertable<Chat> custom({
@@ -637,6 +676,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
     Expression<String>? sumarizePrompt,
     Expression<String>? summaryTitle,
     Expression<int>? sumarizeMsgId,
+    Expression<String>? systemPrompt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -645,6 +685,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
       if (sumarizePrompt != null) 'sumarize_prompt': sumarizePrompt,
       if (summaryTitle != null) 'summary_title': summaryTitle,
       if (sumarizeMsgId != null) 'sumarize_msg_id': sumarizeMsgId,
+      if (systemPrompt != null) 'system_prompt': systemPrompt,
     });
   }
 
@@ -654,7 +695,8 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
       Value<String>? avatar,
       Value<String>? sumarizePrompt,
       Value<String>? summaryTitle,
-      Value<int?>? sumarizeMsgId}) {
+      Value<int?>? sumarizeMsgId,
+      Value<String?>? systemPrompt}) {
     return ChatsCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
@@ -662,6 +704,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
       sumarizePrompt: sumarizePrompt ?? this.sumarizePrompt,
       summaryTitle: summaryTitle ?? this.summaryTitle,
       sumarizeMsgId: sumarizeMsgId ?? this.sumarizeMsgId,
+      systemPrompt: systemPrompt ?? this.systemPrompt,
     );
   }
 
@@ -686,6 +729,9 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
     if (sumarizeMsgId.present) {
       map['sumarize_msg_id'] = Variable<int>(sumarizeMsgId.value);
     }
+    if (systemPrompt.present) {
+      map['system_prompt'] = Variable<String>(systemPrompt.value);
+    }
     return map;
   }
 
@@ -697,7 +743,414 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
           ..write('avatar: $avatar, ')
           ..write('sumarizePrompt: $sumarizePrompt, ')
           ..write('summaryTitle: $summaryTitle, ')
-          ..write('sumarizeMsgId: $sumarizeMsgId')
+          ..write('sumarizeMsgId: $sumarizeMsgId, ')
+          ..write('systemPrompt: $systemPrompt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AgentsTable extends Agents with TableInfo<$AgentsTable, Agent> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AgentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 64),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _avatarMeta = const VerificationMeta('avatar');
+  @override
+  late final GeneratedColumn<String> avatar = GeneratedColumn<String>(
+      'avatar', aliasedName, false,
+      additionalChecks: GeneratedColumn.checkTextLength(),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 200),
+      type: DriftSqlType.string,
+      requiredDuringInsert: false);
+  static const VerificationMeta _systemMeta = const VerificationMeta('system');
+  @override
+  late final GeneratedColumn<String> system = GeneratedColumn<String>(
+      'system', aliasedName, true,
+      additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 2048),
+      type: DriftSqlType.string,
+      requiredDuringInsert: false);
+  static const VerificationMeta _fewShotMeta =
+      const VerificationMeta('fewShot');
+  @override
+  late final GeneratedColumn<String> fewShot = GeneratedColumn<String>(
+      'few_shot', aliasedName, true,
+      additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 2048),
+      type: DriftSqlType.string,
+      requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, name, avatar, description, system, fewShot, createdAt, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'agents';
+  @override
+  VerificationContext validateIntegrity(Insertable<Agent> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('avatar')) {
+      context.handle(_avatarMeta,
+          avatar.isAcceptableOrUnknown(data['avatar']!, _avatarMeta));
+    } else if (isInserting) {
+      context.missing(_avatarMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('system')) {
+      context.handle(_systemMeta,
+          system.isAcceptableOrUnknown(data['system']!, _systemMeta));
+    }
+    if (data.containsKey('few_shot')) {
+      context.handle(_fewShotMeta,
+          fewShot.isAcceptableOrUnknown(data['few_shot']!, _fewShotMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Agent map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Agent(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      avatar: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}avatar'])!,
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      system: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}system']),
+      fewShot: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}few_shot']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $AgentsTable createAlias(String alias) {
+    return $AgentsTable(attachedDatabase, alias);
+  }
+}
+
+class Agent extends DataClass implements Insertable<Agent> {
+  final int id;
+  final String name;
+  final String avatar;
+  final String? description;
+  final String? system;
+  final String? fewShot;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const Agent(
+      {required this.id,
+      required this.name,
+      required this.avatar,
+      this.description,
+      this.system,
+      this.fewShot,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['avatar'] = Variable<String>(avatar);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || system != null) {
+      map['system'] = Variable<String>(system);
+    }
+    if (!nullToAbsent || fewShot != null) {
+      map['few_shot'] = Variable<String>(fewShot);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  AgentsCompanion toCompanion(bool nullToAbsent) {
+    return AgentsCompanion(
+      id: Value(id),
+      name: Value(name),
+      avatar: Value(avatar),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      system:
+          system == null && nullToAbsent ? const Value.absent() : Value(system),
+      fewShot: fewShot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fewShot),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory Agent.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Agent(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      avatar: serializer.fromJson<String>(json['avatar']),
+      description: serializer.fromJson<String?>(json['description']),
+      system: serializer.fromJson<String?>(json['system']),
+      fewShot: serializer.fromJson<String?>(json['fewShot']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'avatar': serializer.toJson<String>(avatar),
+      'description': serializer.toJson<String?>(description),
+      'system': serializer.toJson<String?>(system),
+      'fewShot': serializer.toJson<String?>(fewShot),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  Agent copyWith(
+          {int? id,
+          String? name,
+          String? avatar,
+          Value<String?> description = const Value.absent(),
+          Value<String?> system = const Value.absent(),
+          Value<String?> fewShot = const Value.absent(),
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      Agent(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        avatar: avatar ?? this.avatar,
+        description: description.present ? description.value : this.description,
+        system: system.present ? system.value : this.system,
+        fewShot: fewShot.present ? fewShot.value : this.fewShot,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('Agent(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('avatar: $avatar, ')
+          ..write('description: $description, ')
+          ..write('system: $system, ')
+          ..write('fewShot: $fewShot, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id, name, avatar, description, system, fewShot, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Agent &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.avatar == this.avatar &&
+          other.description == this.description &&
+          other.system == this.system &&
+          other.fewShot == this.fewShot &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class AgentsCompanion extends UpdateCompanion<Agent> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String> avatar;
+  final Value<String?> description;
+  final Value<String?> system;
+  final Value<String?> fewShot;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const AgentsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.avatar = const Value.absent(),
+    this.description = const Value.absent(),
+    this.system = const Value.absent(),
+    this.fewShot = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  AgentsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required String avatar,
+    this.description = const Value.absent(),
+    this.system = const Value.absent(),
+    this.fewShot = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  })  : name = Value(name),
+        avatar = Value(avatar);
+  static Insertable<Agent> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? avatar,
+    Expression<String>? description,
+    Expression<String>? system,
+    Expression<String>? fewShot,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (avatar != null) 'avatar': avatar,
+      if (description != null) 'description': description,
+      if (system != null) 'system': system,
+      if (fewShot != null) 'few_shot': fewShot,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  AgentsCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? name,
+      Value<String>? avatar,
+      Value<String?>? description,
+      Value<String?>? system,
+      Value<String?>? fewShot,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt}) {
+    return AgentsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      avatar: avatar ?? this.avatar,
+      description: description ?? this.description,
+      system: system ?? this.system,
+      fewShot: fewShot ?? this.fewShot,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (avatar.present) {
+      map['avatar'] = Variable<String>(avatar.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (system.present) {
+      map['system'] = Variable<String>(system.value);
+    }
+    if (fewShot.present) {
+      map['few_shot'] = Variable<String>(fewShot.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('avatar: $avatar, ')
+          ..write('description: $description, ')
+          ..write('system: $system, ')
+          ..write('fewShot: $fewShot, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
@@ -707,9 +1160,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   late final $MessagesTable messages = $MessagesTable(this);
   late final $ChatsTable chats = $ChatsTable(this);
+  late final $AgentsTable agents = $AgentsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [messages, chats];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [messages, chats, agents];
 }
