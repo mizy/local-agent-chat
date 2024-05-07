@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:chat_gguf/ai.dart';
@@ -26,6 +27,8 @@ class ChatPageState extends State<ChatPage> {
     id: 'bot',
   );
 
+  table.Agent? agent;
+
   bool responsing = false;
   @override
   void initState() {
@@ -40,8 +43,12 @@ class ChatPageState extends State<ChatPage> {
 
   Future<table.Chat> getChatSession() async {
     final chat = await global.database.getChatById(chatId);
+    if (chat.agentId != null) {
+      agent = await global.database.getAgentById(chat.agentId!);
+    }
     setState(() {
       chatSession = chat;
+      agent = agent;
     });
     return chat;
   }
@@ -137,6 +144,31 @@ class ChatPageState extends State<ChatPage> {
     _handleBotResponse(textMessage);
   }
 
+  List<ChatMessage> addAgentMessage() {
+    final List<ChatMessage> messages = [];
+    if (agent?.system != null) {
+      messages.add(ChatMessage(
+        agent!.system!,
+        "system",
+      ));
+    }
+    //add system message
+    if (chatSession!.sumarizePrompt != "") {
+      messages.add(ChatMessage(
+          "user conversation summarization : ${chatSession!.sumarizePrompt}",
+          "system"));
+    }
+    if (agent?.fewShot != null) {
+      final fewShots = jsonDecode(
+        agent?.fewShot ?? '[]',
+      ) as List;
+      for (var fewShot in fewShots) {
+        messages.add(ChatMessage(fewShot['content'], fewShot['role']));
+      }
+    }
+    return messages;
+  }
+
   void _handleBotResponse(types.TextMessage message) async {
     final botMessage = types.TextMessage(
       author: _bot,
@@ -144,9 +176,13 @@ class ChatPageState extends State<ChatPage> {
       id: const Uuid().v4(),
       text: "loading...",
     );
-    var text = '';
+    _addMessage(botMessage);
+    setState(() {
+      responsing = true;
+    });
     //last 5 messages
-    final List<ChatMessage> messages = _messages
+    final List<ChatMessage> messages = addAgentMessage();
+    messages.addAll(_messages
         .take(5)
         .toList()
         .reversed
@@ -154,27 +190,16 @@ class ChatPageState extends State<ChatPage> {
               (e as types.TextMessage).text,
               e.author == _user ? "user" : "asistant",
             ))
-        .toList();
-    //add system message,//todo: use agent system prompt
-    messages.insert(
-        0,
-        ChatMessage(
-          chatSession!.sumarizePrompt != ""
-              ? "user conversation summarization : ${chatSession!.sumarizePrompt}"
-              : "You are a helpful assistant",
-          "system",
-        ));
+        .toList());
     //add the current message
-    _addMessage(botMessage);
     types.TextMessage aiMessage = botMessage;
-    setState(() {
-      responsing = true;
-    });
+    var text = '';
     ai.chat(messages).listen((event) {
       text += event;
       stdout.write(event);
       var json = botMessage.toJson();
       json['text'] = text;
+      //update the message
       aiMessage = types.TextMessage.fromJson(json);
       final index =
           _messages.indexWhere((element) => element.id == botMessage.id);

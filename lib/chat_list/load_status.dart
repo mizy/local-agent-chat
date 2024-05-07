@@ -38,11 +38,6 @@ class LoadingBoxState extends State<LoadingBox>
       _controller.repeat(reverse: true);
     } else {
       _controller.stop();
-      if (widget.status == LoadStatus.loaded) {
-        _color = Colors.green;
-      } else if (widget.status == LoadStatus.none) {
-        _color = Colors.grey;
-      }
     }
   }
 
@@ -54,6 +49,11 @@ class LoadingBoxState extends State<LoadingBox>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.status == LoadStatus.loaded) {
+      _color = Colors.green;
+    } else if (widget.status == LoadStatus.none) {
+      _color = Colors.grey;
+    }
     return AnimatedBuilder(
       animation: _colorAnimation,
       builder: (context, child) {

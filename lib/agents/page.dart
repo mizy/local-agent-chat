@@ -1,4 +1,5 @@
-import 'package:chat_gguf/agents/agent_detail_page.dart';
+import 'dart:io';
+
 import 'package:chat_gguf/agents/agent_edit.dart';
 import 'package:chat_gguf/bottom_bar/bar.dart';
 import 'package:chat_gguf/chat_list/load_status.dart';
@@ -6,6 +7,7 @@ import 'package:chat_gguf/main.dart';
 import 'package:chat_gguf/store/settings.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:provider/provider.dart';
 
 import '../database/database.dart'; // 你的数据库包
@@ -41,6 +43,21 @@ class AgentListPageState extends State<AgentListPage> {
   final DatabaseService dbService = DatabaseService();
 
   AgentListPageState();
+
+  addNewChat(Agent agent) async {
+    final database = GlobalStore().database;
+    final chat = ChatsCompanion.insert(
+        title: '', avatar: agent.avatar, agentId: Value(agent.id));
+    final id = await database.into(database.chats).insert(chat);
+    if (id < 0) {
+      EasyLoading.showError('Add Chat Failed');
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.pushNamed(context, '/chat', arguments: id)
+          .then((_) => {setState(() {})});
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,24 +101,43 @@ class AgentListPageState extends State<AgentListPage> {
         future: dbService.getAgents(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
+            final lists = snapshot.data!;
             return ListView.builder(
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: NetworkImage(snapshot.data![index].avatar),
-                  ),
-                  title: Text(snapshot.data![index].name),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            AgentDetails(agent: snapshot.data![index]),
+                final agent = snapshot.data![index];
+                return Dismissible(
+                    key: Key(agent.id.toString()),
+                    onDismissed: (direction) async {
+                      lists.removeAt(index);
+                      await dbService.deleteAgent(agent);
+                      setState(() {});
+                    },
+                    background: Container(color: Colors.red),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: FileImage(File(agent.avatar)),
                       ),
-                    );
-                  },
-                );
+                      title: Text(agent.name),
+                      subtitle: Text(
+                        agent.system ?? '(empty)',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () => {addNewChat(agent)},
+                      trailing: IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    AgentEditPage(agent: snapshot.data![index]),
+                              ),
+                            ).then((value) {
+                              setState(() {});
+                            });
+                          }),
+                    ));
               },
             );
           } else if (snapshot.hasError) {

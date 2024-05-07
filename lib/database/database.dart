@@ -29,7 +29,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -93,6 +93,10 @@ class AppDatabase extends _$AppDatabase {
 
   Future<Chat> getChatById(int id) {
     return (select(chats)..where((c) => c.id.equals(id))).getSingle();
+  }
+
+  Future<Agent> getAgentById(int id) {
+    return (select(agents)..where((a) => a.id.equals(id))).getSingle();
   }
 
   Future<List<Message>> getMessagesByChatId(int chatId) {

@@ -8,9 +8,11 @@ class Chats extends Table {
       text().withLength(max: 200).withDefault(const Constant(""))();
   TextColumn get summaryTitle =>
       text().withLength(max: 64).withDefault(const Constant(""))();
-  IntColumn get sumarizeMsgId =>
-      integer().customConstraint('REFERENCES messages(id)').nullable()();
+  IntColumn get sumarizeMsgId => integer().nullable()();
   TextColumn get systemPrompt => text().nullable()();
+  // agentid
+  IntColumn get agentId =>
+      integer().customConstraint('REFERENCES agents(id)').nullable()();
 }
 
 enum MessageType {

@@ -12,6 +12,15 @@ class ChatMessage {
   final String role;
 
   ChatMessage(this.content, this.role);
+
+  ChatMessage.fromJson(Map<String, dynamic> json)
+      : content = json['content'],
+        role = json['role'];
+
+  Map<String, dynamic> toJson() => {
+        'content': content,
+        'role': role,
+      };
 }
 
 class LlamaCPP {

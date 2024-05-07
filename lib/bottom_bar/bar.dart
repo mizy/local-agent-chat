@@ -1,3 +1,5 @@
+import 'package:chat_gguf/agents/page.dart';
+import 'package:chat_gguf/chat_list/page.dart';
 import 'package:flutter/material.dart';
 
 class CustomNavigationBar extends StatelessWidget {
@@ -6,13 +8,15 @@ class CustomNavigationBar extends StatelessWidget {
       "icon": Icons.chat_outlined,
       "selectedIcon": Icons.chat,
       "label": "Chat List",
-      "route": "/chat_list"
+      "route": "/chat_list",
+      "widget": const ChatListPage()
     },
     {
-      "icon": Icons.message_outlined,
-      "selectedIcon": Icons.message,
+      "icon": Icons.account_circle_outlined,
+      "selectedIcon": Icons.account_circle,
       "label": "Agents",
-      "route": "/agent_list"
+      "route": "/agent_list",
+      "widget": const AgentListPage()
     },
     // {
     //   "icon": Icons.settings_outlined,
@@ -44,10 +48,12 @@ class CustomNavigationBar extends StatelessWidget {
           .toList(),
       onDestinationSelected: (index) {
         if (index == currentIndex) return;
-        Navigator.pushReplacementNamed(
-          context,
-          pages[index]['route'] as String,
-        );
+        Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  pages[index]['widget'] as Widget,
+            ));
       },
     );
   }

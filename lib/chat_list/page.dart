@@ -70,7 +70,7 @@ class ChatListPageState extends State<ChatListPage> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('GGUF Chat'),
+            const Text('Chat List'),
             const SizedBox(width: 8.0),
             Tooltip(
                 message: settings.llmLoaded == LoadStatus.loaded

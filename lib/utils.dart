@@ -29,9 +29,13 @@ String formatTime(DateTime? time) {
 }
 
 ImageProvider<Object> getAvatar(String url) {
-  return url.startsWith("assets")
-      ? AssetImage(url)
-      : NetworkImage(url) as ImageProvider<Object>;
+  if (url.startsWith("assets")) {
+    return AssetImage(url);
+  } else if (url.startsWith("http") || url.startsWith("https")) {
+    return NetworkImage(url) as ImageProvider<Object>;
+  } else {
+    return FileImage(File(url));
+  }
 }
 
 Future<String> requestPermission() async {
