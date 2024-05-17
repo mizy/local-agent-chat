@@ -2,18 +2,19 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "flutter_application_1",
+      "name": "local_ai_chat",
       "request": "launch",
-      "type": "dart"
+      "type": "dart",
+      "program": "lib/main.dart"
     },
     {
-      "name": "flutter_application_1 (profile mode)",
+      "name": "local_ai_chat (profile mode)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "profile"
     },
     {
-      "name": "flutter_application_1 (release mode)",
+      "name": "local_ai_chat (release mode)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "release"

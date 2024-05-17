@@ -176,7 +176,6 @@ class ChatPageState extends State<ChatPage> {
       id: const Uuid().v4(),
       text: "loading...",
     );
-    _addMessage(botMessage);
     setState(() {
       responsing = true;
     });
@@ -191,7 +190,8 @@ class ChatPageState extends State<ChatPage> {
               e.author == _user ? "user" : "asistant",
             ))
         .toList());
-    //add the current message
+    //add the current message after clone messages
+    _addMessage(botMessage);
     types.TextMessage aiMessage = botMessage;
     var text = '';
     ai.chat(messages).listen((event) {

@@ -6,13 +6,12 @@ import 'package:llama_cpp_dart/llama_cpp_dart.dart';
 Future<void> main() async {
   DynamicLibrary.open("./libllm.so");
   final Map<String, String> params = {
-    "model":
-        "/Users/mizy/projects/llama-cpp-gpt-api/models/lmstudio-ai/gemma-2b-it-GGUF/gemma-2b-it-q8_0.gguf",
+    "model": "/Users/mizy/projects/ggufs/Phi-3-mini-4k-instruct-q4.gguf",
     "ctx-size": "512",
   };
   final instance = LlamaCPP();
   await instance.init(params);
-  instance.setTemplate("gemma");
+  instance.setTemplate("phi3");
   final messages = [
     ChatMessage("hi,how can i help you?", "asistant"),
     ChatMessage("hello", "user"),

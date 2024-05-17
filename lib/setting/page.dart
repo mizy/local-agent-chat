@@ -127,12 +127,17 @@ class SettingPageState extends State<SettingPage> {
                 width: 200,
                 child: TextField(
                   textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
+                  controller: TextEditingController(
+                    text: settings.llamaParams["ctx-size"] ?? "2048",
+                  ),
                   decoration: InputDecoration(
                     hintText: settings.llamaParams["ctx-size"],
                   ),
                   onChanged: (String value) {
                     settings.updateLlamaParams("ctx-size", value);
+                  },
+                  onSubmitted: (String value) {
+                    FocusScope.of(context).unfocus();
                   },
                 ),
               ),

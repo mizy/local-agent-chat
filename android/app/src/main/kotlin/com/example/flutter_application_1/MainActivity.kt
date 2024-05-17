@@ -1,4 +1,4 @@
-package com.example.flutter_application_1
+package com.example.local_ai_chat
 
 import io.flutter.embedding.android.FlutterActivity
 
