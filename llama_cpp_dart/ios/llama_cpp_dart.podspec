@@ -29,6 +29,10 @@ A new Flutter FFI plugin project.
   s.platform = :ios, '17.0'
   s.library = 'c++'
   # Flutter.framework does not contain a i386 slice.
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
+  s.pod_target_xcconfig = { 
+    'DEFINES_MODULE' => 'YES', 
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
+    'HEADER_SEARCH_PATHS' => '"${SRCROOT}/../../llama_cpp_dart/src/llama.cpp/"'
+ }
   s.swift_version = '5.9'
 end

@@ -22,7 +22,7 @@ extern "C"
 #include <stdbool.h>
 #include <stddef.h>
 
-  typedef void dart_logger(const char *buffer);
+  typedef int dart_logger(const char *buffer);
 
   typedef void dart_output(const char *buffer, bool stop);
 

@@ -45,7 +45,7 @@ bool add_bos_token = true;
 
 void dart_log_callback(ggml_log_level level, const char *text, void *user_data)
 {
-  dart_logger_callback(text);
+    dart_logger_callback(text);
 }
 
 static bool has_stop_string(gpt_params &params, std::string &last_output)
@@ -71,12 +71,13 @@ int llm_init(int argc, char **argv, dart_logger *log_output)
   {
     return 1;
   }
-  dart_logger_callback = log_output;
-  LOG_TEE("llm_init: %s\n", "llm_init");
-
+  log_output("llm_log_init\n");
+  LOG_TEE("llm_init: %s\n", "gpt_params_parsed");
   if (log_output != nullptr)
   {
-    llama_log_set(dart_log_callback, NULL);
+    dart_logger_callback = log_output;
+    // flutter debug will with error: ArgumentError (Invalid argument(s): argument value for 'return_value' is null)
+    // llama_log_set(dart_log_callback, nullptr);
   }
   llama_backend_init();
   llama_numa_init(params.numa);

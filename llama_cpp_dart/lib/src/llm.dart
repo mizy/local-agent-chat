@@ -217,10 +217,12 @@ class LlamaCPP {
     _log = log;
   }
 
-  static void _logOutput(Pointer<Char> message) {
+  //dart ffi can only use int function(Pointer<Char> message),use void will cause error
+  static int _logOutput(Pointer<Char> message) {
     if (_log != null) {
       _log!(message.cast<Utf8>().toDartString());
     }
+    return 1;
   }
 
   void stop() {

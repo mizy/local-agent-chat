@@ -12,6 +12,7 @@ llm.o:../llm.cpp ../llm.h llama.h ggml.h $(COMMON_H_DEPS)
 libllm.so: llm.o ggml.o llama.o $(COMMON_DEPS) console.o grammar-parser.o $(OBJS)
 	$(CXX) $(CXXFLAGS) -shared -fPIC -o $@ $^ $(LDFLAGS)
 ' >> Makefile
+# this is only for llm-test task in Makefile,not for build ios or macos app, cause c++ binary need the flag to build and macos or ios will load default metallib that build by xcode
 sed -i '' '1i\
 LLAMA_METAL_EMBED_LIBRARY := 1 
 ' Makefile

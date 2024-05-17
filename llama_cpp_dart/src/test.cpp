@@ -19,7 +19,7 @@ int main()
   std::vector<const char *> argv = {
       "llm",
       "--model",
-      "/Users/mizy/projects/llama-cpp-gpt-api/models/microsoft/Phi-3-mini-4k-instruct-gguf/Phi-3-mini-4k-instruct-q4.gguf",
+      "/Users/mizy/projects/ggufs/Phi-3-mini-4k-instruct-q4.gguf",
       "--ctx-size",
       "4096",
   };

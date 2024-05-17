@@ -15,8 +15,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.3
-  ffigen: ^10.0.0
+  flutter_lints: ^4.0.0
+  ffigen: ^12.0.0
   path_provider: ^2.1.2
   system_info2: ^4.0.0
 
@@ -30,7 +30,7 @@ ffigen:
   output: "lib/src/bindings.dart"
   headers:
     entry-points:
-      - "src/llm.cpp"
+      - "src/llm.h"
   compiler-opts:
     - "-I/usr/lib/clang/17/include"
     - "-I/usr/local/include"
