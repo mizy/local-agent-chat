@@ -18,6 +18,11 @@ cd local-agent-chat
 git submodule update --init --recursive
 ```
 
+## Supported Platforms
++ [x] MacOS
++ [x] Linux
++ [x] IOS
+
 ## Building the Project
 
 To build the project, use the following command:
