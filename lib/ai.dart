@@ -61,6 +61,12 @@ class AI {
     return const Stream.empty();
   }
 
+  stop() {
+    if (type == "llama.cpp") {
+      llamaInstance?.stop();
+    }
+  }
+
   Future<String> sumarizeHistory(
     List<ChatMessage> messages,
   ) async {

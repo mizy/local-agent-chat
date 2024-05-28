@@ -38,7 +38,7 @@ class Settings extends ChangeNotifier {
           originalMap.map((key, value) => MapEntry(key, value.toString()));
       promptTemplate = json['promptTemplate'];
       if (llamaParams['ctx-size'] != null) {
-        llamaParams['ctx-size'] = '4096';
+        llamaParams['ctx-size'] = '512';
       }
     }
     bookmark = prefs.getString('bookmark');

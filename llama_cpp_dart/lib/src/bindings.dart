@@ -12808,7 +12808,7 @@ class llama_cpp_binding {
     ggml_log_callback log_callback,
     ffi.Pointer<ffi.Void> user_data,
   ) {
-    _llama_log_set(
+    return _llama_log_set(
       log_callback,
       user_data,
     );
@@ -14441,6 +14441,10 @@ const int true1 = 1;
 
 const int false1 = 0;
 
+const int NULL = 0;
+
+const int __WORDSIZE = 64;
+
 const int __has_safe_buffers = 1;
 
 const int __DARWIN_ONLY_64_BIT_INO_T = 1;
@@ -14501,19 +14505,7 @@ const int __PTHREAD_RWLOCK_SIZE__ = 192;
 
 const int __PTHREAD_RWLOCKATTR_SIZE__ = 16;
 
-const int __DARWIN_WCHAR_MAX = 2147483647;
-
-const int __DARWIN_WCHAR_MIN = -2147483648;
-
-const int __DARWIN_WEOF = -1;
-
-const int _FORTIFY_SOURCE = 2;
-
-const int NULL = 0;
-
 const int USER_ADDR_NULL = 0;
-
-const int __WORDSIZE = 64;
 
 const int INT8_MAX = 127;
 
@@ -15316,6 +15308,14 @@ const int __MAC_OS_X_VERSION_MIN_REQUIRED = 140000;
 const int __MAC_OS_X_VERSION_MAX_ALLOWED = 140500;
 
 const int __ENABLE_LEGACY_MAC_AVAILABILITY = 1;
+
+const int __DARWIN_WCHAR_MAX = 2147483647;
+
+const int __DARWIN_WCHAR_MIN = -2147483648;
+
+const int __DARWIN_WEOF = -1;
+
+const int _FORTIFY_SOURCE = 2;
 
 const int RENAME_SECLUDE = 1;
 

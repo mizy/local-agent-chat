@@ -22,6 +22,7 @@ class SettingPageState extends State<SettingPage> {
   double? topP;
   int? topK;
   late Settings settings;
+  final _formKey = GlobalKey<FormState>();
 
   void selectPromptTemplate() {
     showModalBottomSheet(
@@ -67,6 +68,7 @@ class SettingPageState extends State<SettingPage> {
       status: 'llm loading...',
     );
     final err = await ai.useSettings(settings);
+    EasyLoading.dismiss();
     if (err != "") {
       messager.showSnackBar(
         SnackBar(
@@ -76,7 +78,6 @@ class SettingPageState extends State<SettingPage> {
       return;
     }
     settings.updateLLMLoaded(true);
-    EasyLoading.dismiss();
     messager.showSnackBar(
       const SnackBar(
         content: Text("llm load success"),
@@ -88,70 +89,86 @@ class SettingPageState extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
     settings = context.watch<Settings>();
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Setting'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: <Widget>[
-            ListTile(
-              title: const Text('Model Path'),
-              trailing: SizedBox(
-                width: 200,
-                child: TextButton(
-                  onPressed: selectModel,
-                  child: Text(
-                    settings.llamaParams["model"] != null
-                        ? path.basename(settings.llamaParams["model"]!)
-                        : 'Select Model',
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
+    return GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Setting'),
+          ),
+          body: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: GestureDetector(
+                  child: Form(
+                key: _formKey,
+                child: ListView(
+                  children: <Widget>[
+                    ListTile(
+                      title: const Text('Model Path'),
+                      trailing: SizedBox(
+                        width: 200,
+                        child: TextButton(
+                          onPressed: selectModel,
+                          child: Text(
+                            settings.llamaParams["model"] != null
+                                ? path.basename(settings.llamaParams["model"]!)
+                                : 'Select Model',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                    ListTile(
+                        title: const Text('Prompt Template'),
+                        trailing: SizedBox(
+                          width: 200,
+                          child: TextButton(
+                            onPressed: selectPromptTemplate,
+                            child: Text(
+                                settings.promptTemplate ?? 'Select Template'),
+                          ),
+                        )),
+                    ListTile(
+                      title: const Text('Context Length'),
+                      trailing: SizedBox(
+                        width: 200,
+                        child: TextFormField(
+                          initialValue:
+                              settings.llamaParams["ctx-size"] ?? '2048',
+                          textAlign: TextAlign.center,
+                          decoration: InputDecoration(
+                            hintText: settings.llamaParams["ctx-size"],
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter size';
+                            }
+                            return null;
+                          },
+                          onChanged: (String value) {
+                            settings.updateLlamaParams("ctx-size", value);
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
+              ))),
+          bottomNavigationBar: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  _formKey.currentState!.save();
+                  initModelParams();
+                }
+              },
+              child: const Text('Reload Model'),
             ),
-            ListTile(
-                title: const Text('Prompt Template'),
-                trailing: SizedBox(
-                  width: 200,
-                  child: TextButton(
-                    onPressed: selectPromptTemplate,
-                    child: Text(settings.promptTemplate ?? 'Select Template'),
-                  ),
-                )),
-            ListTile(
-              title: const Text('Context Length'),
-              trailing: SizedBox(
-                width: 200,
-                child: TextField(
-                  textAlign: TextAlign.center,
-                  controller: TextEditingController(
-                    text: settings.llamaParams["ctx-size"] ?? "2048",
-                  ),
-                  decoration: InputDecoration(
-                    hintText: settings.llamaParams["ctx-size"],
-                  ),
-                  onChanged: (String value) {
-                    settings.updateLlamaParams("ctx-size", value);
-                  },
-                  onSubmitted: (String value) {
-                    FocusScope.of(context).unfocus();
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          onPressed: initModelParams,
-          child: const Text('Reload Model'),
-        ),
-      ),
-    );
+          ),
+        ));
   }
 }

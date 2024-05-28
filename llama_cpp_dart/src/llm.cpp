@@ -71,7 +71,6 @@ int llm_init(int argc, char **argv, dart_logger *log_output)
   {
     return 1;
   }
-  log_output("llm_log_init\n");
   LOG_TEE("llm_init: %s\n", "gpt_params_parsed");
   if (log_output != nullptr)
   {
@@ -210,7 +209,6 @@ void llm_cleanup(void)
 {
   chat_template = nullptr;
   stop_generation.store(true);
-  llama_kv_cache_clear(ctx);
   llama_free(ctx);
   if (ctx_guidance)
   {

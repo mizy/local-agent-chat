@@ -221,8 +221,9 @@ class LlamaCPP {
   static int _logOutput(Pointer<Char> message) {
     if (_log != null) {
       _log!(message.cast<Utf8>().toDartString());
+      return 1;
     }
-    return 1;
+    return -1;
   }
 
   void stop() {

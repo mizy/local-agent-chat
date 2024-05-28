@@ -296,6 +296,34 @@ class ChatPageState extends State<ChatPage> {
               ),
             ),
           ),
+          Visibility(
+            visible: responsing,
+            child: Positioned(
+              right: 10,
+              bottom: 10,
+              child: FloatingActionButton(
+                mini: true,
+                onPressed: () => {
+                  ai.stop(),
+                  setState(() {
+                    responsing = false;
+                  })
+                },
+                foregroundColor: Colors.grey,
+                backgroundColor: Colors.transparent,
+                elevation: 0.0,
+                child: const Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                    ),
+                    Icon(Icons.stop),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ]));
   }
 }

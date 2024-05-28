@@ -21,7 +21,7 @@ int main()
       "--model",
       "/Users/mizy/projects/ggufs/Phi-3-mini-4k-instruct-q4.gguf",
       "--ctx-size",
-      "4096",
+      "512",
   };
   // Convert vector to raw array
   std::vector<char *>
@@ -49,9 +49,9 @@ int main()
   // <|im_start|>assistant)",
   //                  print);
   std::vector<llama_chat_message *> messages;
-  llama_chat_message message = llama_chat_message{.content = "hello", .role = "user"};
-  // llama_chat_message botMessage = llama_chat_message{.content = chat_text, .role = "system"};
-  // messages.push_back(&botMessage);
+  llama_chat_message message = llama_chat_message{.content = "hi", .role = "user"};
+  llama_chat_message botMessage = llama_chat_message{.content = "hi, how can I help you?", .role = "asistant"};
+  messages.push_back(&botMessage);
   messages.push_back(&message);
 
   llm_chat(messages.data(), messages.size(), print);

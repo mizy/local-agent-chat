@@ -123,6 +123,8 @@ class ChatListPageState extends State<ChatListPage> {
                         backgroundImage: getAvatar(item.avatar),
                       ),
                       title: Text(
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         item.name == "" ? "new chat" : item.name,
                         style: const TextStyle(
                           fontSize: 18.0,
