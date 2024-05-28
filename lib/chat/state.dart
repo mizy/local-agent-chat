@@ -187,7 +187,7 @@ class ChatPageState extends State<ChatPage> {
         .reversed
         .map((e) => ChatMessage(
               (e as types.TextMessage).text,
-              e.author == _user ? "user" : "asistant",
+              e.author == _user ? "user" : "assistant",
             ))
         .toList());
     //add the current message after clone messages

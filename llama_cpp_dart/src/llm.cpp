@@ -32,7 +32,7 @@ static dart_logger *dart_logger_callback;
 static char *chat_template;
 std::map<std::string, std::vector<std::string>> antiprompt_map = {
     {"chatml",
-     {"<|im_start|>", "<|im_end|>"}},
+     {"<|im_start|>", "<|im_end|>","<|endoftext|>"}},
     {"llama3",
      {"<|start_header_id|>", "<|eot_id|>", "<|end_header_id|>"}},
     {"zephyr",
@@ -152,6 +152,7 @@ int llm_completion(const char *prompt, dart_output *output)
     }
     // callback
     std::string token_str = llama_token_to_piece(ctx, new_token_id);
+    // LOG_TEE(" (%s) ",token_str.c_str());
     output(token_str.c_str(), false);
     llama_batch_clear(batch);
     llama_batch_add(batch, new_token_id, n_cur, {0}, true);
