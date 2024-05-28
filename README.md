@@ -11,10 +11,10 @@ This is a Flutter application that utilizes the Llama.cpp library to run large L
 
 ## demo png
 
-- ![Image 1](https://github.com/mizy/local-agent-chat/assets/7129229/3de55e54-eae4-42d4-bf59-73fada1f72f2)
-- ![Image 2](https://github.com/mizy/local-agent-chat/assets/7129229/6da688fd-465b-4c49-80ec-0f1a7bf3940d)
 - ![Image 3](https://github.com/mizy/local-agent-chat/assets/7129229/00f34c7c-0638-4906-9f32-ebbaa523fb31)
 - ![Image 4](https://github.com/mizy/local-agent-chat/assets/7129229/338690f3-da6c-4b26-bf33-566f1cedd388)
+- ![Image 1](https://github.com/mizy/local-agent-chat/assets/7129229/3de55e54-eae4-42d4-bf59-73fada1f72f2)
+- ![Image 2](https://github.com/mizy/local-agent-chat/assets/7129229/6da688fd-465b-4c49-80ec-0f1a7bf3940d)
 
 ## Getting Started
 
@@ -54,7 +54,7 @@ change llama_cpp_dart/src/llm.cpp antiprompt_map to add a new prompt format
 
 ## Contributing
 
-Contributions are welcome! Please read the contributing guidelines before making any changes.
+Contributions are welcome! 
 
 ## License
 
